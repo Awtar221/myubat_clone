@@ -47,23 +47,23 @@ dependencies:
   qr_flutter: ^4.1.0
 
   # Location
-  geolocator: ^10.1.0
-  geocoding: ^2.1.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
 
   # Storage
   shared_preferences: ^2.2.2
 
   # UI Components
   flutter_svg: ^2.0.9
-  intl: ^0.18.1
+  intl: ^0.20.2
 
   # Firebase (Optional for backend)
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.15.3
-  cloud_firestore: ^4.13.6
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
 
   # Permissions
-  permission_handler: ^11.1.0
+  permission_handler: ^11.4.0
 
 dev_dependencies:
   flutter_test:

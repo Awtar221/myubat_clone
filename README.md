@@ -1,16 +1,51 @@
-# mysejahtera_clone
+# MySejahtera Clone App
 
-A new Flutter project.
+A Flutter-based clone of the MySejahtera application with health tracking, COVID-19 features, vaccination records, and check-in functionality.
 
-## Getting Started
+## ✨ Features
 
-This project is a starting point for a Flutter application.
+- ✅ **Home Dashboard** - Health status overview with QR code
+- ✅ **Health Tracking** - Log daily temperature and symptoms
+- ✅ **Check-In System** - Simulated QR code scanning and location tracking
+- ✅ **Vaccination Records** - Complete vaccination history with digital certificate
+- ✅ **Profile Management** - User information and settings
+- ✅ **No Backend Required** - All data stored locally using Provider
 
-A few resources to get you started if this is your first Flutter project:
+## 🎨 Key Technologies
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Flutter SDK** ≥ 3.0.0
+- **Provider** - State management
+- **QR Flutter** - QR code generation
+- **Google Fonts** - Custom typography
+- **Intl** - Date formatting
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📱 Screens Overview
+
+1. **Home** - Main dashboard with health status card, personal QR code, quick actions, and COVID-19 statistics
+2. **Health Status** - Daily health assessments, temperature records list, test results
+3. **Check-In** - QR scanner interface and check-in history
+4. **Vaccination** - Vaccination status, dose records, and digital certificate
+5. **Profile** - Personal information and app settings
+
+## 🔧 Notes
+
+- The app uses simulated data (no backend connection)
+- QR code scanning is simulated with predefined locations
+- All health records are stored in memory (reset on app restart)
+- To persist data, implement SharedPreferences storage
+
+## 📝 Future Enhancements
+
+- Implement persistent storage with SharedPreferences
+- Add real QR code scanning functionality
+- Implement push notifications
+- Add multi-language support
+- Integrate with real backend API
+- Implement 3 AI features within the application
+  - AI risk assessment
+  - AI Chatbot
+  - Smart Appointments 
+
+## 📄 License
+
+This is a learning project and demo application.

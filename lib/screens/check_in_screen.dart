@@ -1,34 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/user_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class CheckInScreen extends StatelessWidget {
+  const CheckInScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
+    final healthProvider = Provider.of<HealthProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {},
-          ),
-        ],
+        title: const Text('Check-In'),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildProfileHeader(userProvider),
+            _buildScannerSection(context, healthProvider),
             const SizedBox(height: 16),
-            _buildPersonalInfo(userProvider),
-            const SizedBox(height: 16),
-            _buildMenuSection(),
-            const SizedBox(height: 16),
-            _buildSupportSection(),
+            _buildCheckInHistory(healthProvider),
             const SizedBox(height: 16),
           ],
         ),
@@ -36,77 +27,83 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(UserProvider userProvider) {
+  Widget _buildScannerSection(BuildContext context, HealthProvider healthProvider) {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1E3A8A),
-            Color(0xFF2563EB),
-          ],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:1.0),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
             ),
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-              child: Text(
-                userProvider.name.substring(0, 1).toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+            child: const Icon(
+              Icons.qr_code_scanner,
+              size: 80,
+              color: Color(0xFF1E3A8A),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Scan QR Code',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Scan venue QR code to check-in',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _simulateCheckIn(context, healthProvider),
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Open Scanner'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            userProvider.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            userProvider.icNumber,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha:9.0),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: userProvider.healthStatusColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              userProvider.healthStatus,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _simulateCheckIn(context, healthProvider),
+              icon: const Icon(Icons.edit_location),
+              label: const Text('Manual Check-In'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1E3A8A),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: const BorderSide(color: Color(0xFF1E3A8A)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -115,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPersonalInfo(UserProvider userProvider) {
+  Widget _buildCheckInHistory(HealthProvider healthProvider) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
@@ -133,223 +130,221 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Personal Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildInfoRow(Icons.phone, 'Phone Number', userProvider.phoneNumber),
-          const Divider(height: 24),
-          _buildInfoRow(Icons.email, 'Email', userProvider.email),
-          const Divider(height: 24),
-          _buildInfoRow(Icons.location_on, 'Address', userProvider.address),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withValues(alpha:1.0),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
+              const Text(
+                'Check-In History',
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+              TextButton(
+                onPressed: () {},
+                child: const Text('View All'),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            Icons.edit,
-            'Edit Profile',
-            'Update your personal information',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.lock,
-            'Privacy & Security',
-            'Manage your privacy settings',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.notifications,
-            'Notifications',
-            'Manage notification preferences',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.language,
-            'Language',
-            'Change app language',
-                () {},
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupportSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            Icons.help,
-            'Help & Support',
-            'FAQs and customer support',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.info,
-            'About MySejahtera',
-            'App version and information',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.description,
-            'Terms & Conditions',
-            'Read our terms of service',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.policy,
-            'Privacy Policy',
-            'How we handle your data',
-                () {},
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            Icons.logout,
-            'Logout',
-            'Sign out of your account',
-                () {},
-            isDestructive: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(
-      IconData icon,
-      String title,
-      String subtitle,
-      VoidCallback onTap, {
-        bool isDestructive = false,
-      }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isDestructive
-                    ? Colors.red.withValues(alpha:1.0)
-                    : const Color(0xFF1E3A8A).withValues(alpha:1.0),
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 16),
+          if (healthProvider.checkInHistory.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.history,
+                      size: 64,
+                      color: Colors.grey[300],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No check-in history yet',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Icon(
-                icon,
-                color: isDestructive ? Colors.red : const Color(0xFF1E3A8A),
-                size: 22,
+            )
+          else
+            ...healthProvider.checkInHistory.take(5).map((record) =>
+                _buildCheckInItem(record)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckInItem(CheckInRecord record) {
+    final duration = record.checkOutTime != null
+        ? record.checkOutTime!.difference(record.checkInTime)
+        : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withValues(alpha:1.0),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.location_on,
+              color: Color(0xFF1E3A8A),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.locationName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  record.address,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      DateFormat('dd MMM, HH:mm').format(record.checkInTime),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    if (duration != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '• ${duration.inHours}h ${duration.inMinutes % 60}m',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            record.checkOutTime != null
+                ? Icons.check_circle
+                : Icons.radio_button_checked,
+            color: record.checkOutTime != null
+                ? Colors.green
+                : Colors.orange,
+            size: 20,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _simulateCheckIn(BuildContext context, HealthProvider healthProvider) {
+    final locations = [
+      {'name': 'KLCC Shopping Mall', 'address': 'Kuala Lumpur City Centre'},
+      {'name': 'Pavilion KL', 'address': 'Bukit Bintang, Kuala Lumpur'},
+      {'name': 'Sunway Pyramid', 'address': 'Bandar Sunway, Selangor'},
+      {'name': 'Mid Valley Megamall', 'address': 'Lingkaran Syed Putra'},
+      {'name': 'The Gardens Mall', 'address': 'Mid Valley City'},
+    ];
+
+    final random = locations[DateTime.now().second % locations.length];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Check-In Successful'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              random['name']!,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Text(
+              random['address']!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
                 children: [
+                  const Icon(Icons.access_time, size: 16, color: Colors.green),
+                  const SizedBox(width: 8),
                   Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
+                    DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now()),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.green,
                       fontWeight: FontWeight.w600,
-                      color: isDestructive ? Colors.red : Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: isDestructive ? Colors.red : Colors.grey,
-            ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              healthProvider.addCheckIn(
+                CheckInRecord(
+                  locationName: random['name']!,
+                  address: random['address']!,
+                  checkInTime: DateTime.now(),
+                ),
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/user_provider.dart';
 
 class HealthStatusScreen extends StatelessWidget {
-  const HealthStatusScreen({super.key});
+  const HealthStatusScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +203,7 @@ class HealthStatusScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 2.0),
+                        color: Colors.orange.withValues(alpha:2.0),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -214,7 +214,7 @@ class HealthStatusScreen extends StatelessWidget {
                 ],
               ),
             );
-          }),
+          }).toList(),
         ],
       ),
     );
@@ -235,7 +235,7 @@ class HealthStatusScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha:0.5),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

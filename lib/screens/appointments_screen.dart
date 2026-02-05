@@ -96,6 +96,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showBookAppointmentDialog,
         backgroundColor: AppColors.appointmentColor,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Book Appointment'),
       ),
@@ -297,37 +298,48 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   Widget _buildStatusChip(String status) {
     Color color;
+    String label;
+
     switch (status.toLowerCase()) {
       case 'confirmed':
         color = AppColors.success;
+        label = 'Confirmed';
         break;
       case 'pending':
         color = AppColors.warning;
+        label = 'Pending';
         break;
       case 'completed':
         color = AppColors.info;
+        label = 'Completed'; // Added the missing assignment
         break;
       default:
         color = AppColors.textSecondary;
+        label = status;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:1),
+        // alpha: 0.1 gives you that nice 10% tinted background
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha:3)),
+        border: Border.all(
+          color: color.withValues(alpha: 0.4), // 40% opacity border
+        ),
       ),
       child: Text(
-        status,
+        label,
         style: TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
+          fontWeight: FontWeight.bold,
+          color: color, // The full-strength color for the text
         ),
       ),
     );
   }
+
+
 
   void _showAppointmentDetails(Map<String, dynamic> appointment, bool isUpcoming) {
     showModalBottomSheet(
@@ -532,6 +544,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.appointmentColor,
+                        foregroundColor: Colors.white70,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

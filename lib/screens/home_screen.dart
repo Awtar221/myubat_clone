@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:1.0),
+              color: Color.fromARGB(26, 0, 0, 0),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -129,7 +129,7 @@ class HomeContent extends StatelessWidget {
                         'Welcome back,',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white70,
+                          color: Color.fromRGBO(255, 255, 255, 0.7),
                         ),
                       ),
                       const SizedBox(height: 5),
@@ -325,6 +325,7 @@ class HomeContent extends StatelessWidget {
           );
         },
         backgroundColor: AppColors.chatbotColor,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.chat),
         label: const Text('Ask AI'),
       ),

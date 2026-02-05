@@ -273,45 +273,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLanguageDialog() {
+    String selectedLanguage = 'en';
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Language'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile(
-                title: const Text('English'),
-                value: 'en',
-                groupValue: 'en',
-                onChanged: (value) {
-                  Navigator.pop(context);
-                },
-                activeColor: AppColors.primaryColor,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Select Language'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildLanguageOption(
+                    'English',
+                    'en',
+                    selectedLanguage,
+                        (value) {
+                      setState(() {
+                        selectedLanguage = value;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildLanguageOption(
+                    'Bahasa Melayu',
+                    'ms',
+                    selectedLanguage,
+                        (value) {
+                      setState(() {
+                        selectedLanguage = value;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildLanguageOption(
+                    '中文',
+                    'zh',
+                    selectedLanguage,
+                        (value) {
+                      setState(() {
+                        selectedLanguage = value;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
               ),
-              RadioListTile(
-                title: const Text('Bahasa Melayu'),
-                value: 'ms',
-                groupValue: 'en',
-                onChanged: (value) {
-                  Navigator.pop(context);
-                },
-                activeColor: AppColors.primaryColor,
-              ),
-              RadioListTile(
-                title: const Text('中文'),
-                value: 'zh',
-                groupValue: 'en',
-                onChanged: (value) {
-                  Navigator.pop(context);
-                },
-                activeColor: AppColors.primaryColor,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildLanguageOption(
+      String label,
+      String value,
+      String currentValue,
+      Function(String) onSelect,
+      ) {
+    final isSelected = currentValue == value;
+
+    return GestureDetector(
+      onTap: () => onSelect(value),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Color.fromARGB(26, 46, 125, 50)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryColor
+                : Color.fromARGB(51, 0, 0, 0),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : Color.fromARGB(153, 0, 0, 0),
+                  width: 2,
+                ),
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : Colors.transparent,
+              ),
+              child: isSelected
+                  ? Center(
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

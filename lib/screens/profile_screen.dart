@@ -94,13 +94,13 @@ class ProfileScreen extends StatelessWidget {
                           Container(
                             height: 40,
                             width: 1,
-                            color: Colors.white.withValues(alpha:3.0),
+                            color: Color.fromARGB(77, 255, 255, 255),
                           ),
                           _buildStatCard('3', 'Appointments'),
                           Container(
                             height: 40,
                             width: 1,
-                            color: Colors.white.withValues(alpha:3.0),
+                            color: Color.fromARGB(77, 255, 255, 255),
                           ),
                           _buildStatCard('92%', 'Adherence'),
                         ],

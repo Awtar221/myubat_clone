@@ -155,7 +155,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
           });
         },
         backgroundColor: Colors.white,
-        selectedColor: AppColors.mapColor.withValues(alpha:2.0),
+        selectedColor: Color.fromARGB(51, 211, 47, 47),
         labelStyle: TextStyle(
           color: isSelected ? AppColors.mapColor : AppColors.textSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

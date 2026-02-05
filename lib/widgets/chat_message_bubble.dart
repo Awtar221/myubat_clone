@@ -7,11 +7,11 @@ class ChatMessageBubble extends StatelessWidget {
   final String timestamp;
 
   const ChatMessageBubble({
-    Key? key,
+    super.key,
     required this.text,
     required this.isUser,
     required this.timestamp,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class ChatMessageBubble extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Color.fromARGB(13, 0, 0, 0),
                         blurRadius: 5,
                         offset: const Offset(0, 2),
                       ),

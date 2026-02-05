@@ -6,10 +6,10 @@ class MedicationListCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const MedicationListCard({
-    Key? key,
+    super.key,
     required this.medication,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class MedicationListCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.medicationColor.withOpacity(0.1),
+                      color: Color.fromARGB(26, 123, 31, 162),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -71,7 +71,7 @@ class MedicationListCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withOpacity(0.1),
+                        color: Color.fromARGB(26, 255, 167, 38),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(

@@ -6,10 +6,10 @@ class HospitalCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const HospitalCard({
-    Key? key,
+    super.key,
     required this.hospital,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class HospitalCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.mapColor.withOpacity(0.1),
+                      color: Color.fromARGB(26, 211, 47, 47),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -125,10 +125,10 @@ class HospitalCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
+                    color: Color.fromARGB(26, 229, 115, 115),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppColors.error.withOpacity(0.3),
+                      color: Color.fromARGB(77, 229, 115, 115),
                     ),
                   ),
                   child: Row(
@@ -163,7 +163,7 @@ class HospitalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Color.fromARGB(26, color.red, color.green, color.blue),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

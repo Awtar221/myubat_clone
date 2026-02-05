@@ -89,6 +89,8 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
             Tab(text: 'Active'),
             Tab(text: 'Completed'),
           ],
+          labelColor: Colors.white,
+          unselectedLabelColor: AppColors.textLight,
         ),
       ),
       body: TabBarView(
@@ -101,6 +103,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMedicationDialog,
         backgroundColor: AppColors.medicationColor,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Add Medication'),
       ),
@@ -118,14 +121,14 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.medicationColor.withValues(alpha:8.0),
+                  Color.fromARGB(204, 123, 31, 162),
                   AppColors.medicationColor,
                 ],
               ),
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.medicationColor.withValues(alpha:3.0),
+                  color: Color.fromARGB(77, 123, 31, 162),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -138,13 +141,13 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                 Container(
                   height: 40,
                   width: 1,
-                  color: Colors.white.withValues(alpha:2.0),
+                  color: Color.fromARGB(77, 255, 255, 255),
                 ),
                 _buildStatItem('Today', '3'),
                 Container(
                   height: 40,
                   width: 1,
-                  color: Colors.white.withValues(alpha:3.0),
+                  color: Color.fromARGB(77, 255, 255, 255),
                 ),
                 _buildStatItem('Adherence', '92%'),
               ],
@@ -300,7 +303,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                         Container(
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
-                            color: AppColors.medicationColor.withValues(alpha:5.0),
+                            color: Color.fromARGB(26, 123, 31, 162),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: const Icon(

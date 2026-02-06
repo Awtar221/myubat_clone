@@ -13,7 +13,7 @@ void main() {
 }
 
 class MyUbatApp extends StatelessWidget {
-  const MyUbatApp({Key? key}) : super(key: key);
+  const MyUbatApp({super.key});
 
   @override
   Widget build(BuildContext context) {

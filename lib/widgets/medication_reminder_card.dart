@@ -8,12 +8,12 @@ class MedicationReminderCard extends StatelessWidget {
   final bool isTaken;
 
   const MedicationReminderCard({
-    Key? key,
+    super.key,
     required this.medicationName,
     required this.time,
     required this.dosage,
     required this.isTaken,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +30,8 @@ class MedicationReminderCard extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isTaken
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.warning.withOpacity(0.1),
+                    ? AppColors.success.withValues(alpha:0.1)
+                    : AppColors.warning.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

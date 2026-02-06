@@ -18,40 +18,56 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
       'name': 'Hospital Kuala Lumpur',
       'distance': '2.3 km',
       'waitingTime': '15 mins',
+      'waitingStatus': 'low', // low, medium, high
+      'avgWaitingTime': '12 mins',
+      'peakHours': '10:00 AM - 12:00 PM',
       'rating': 4.5,
       'type': 'Government',
       'emergency': true,
       'beds': 45,
+      'currentQueue': 8,
       'departments': ['Emergency', 'Cardiology', 'Pediatrics'],
     },
     {
       'name': 'Hospital Universiti Kebangsaan Malaysia',
       'distance': '4.1 km',
       'waitingTime': '25 mins',
+      'waitingStatus': 'medium',
+      'avgWaitingTime': '20 mins',
+      'peakHours': '9:00 AM - 11:00 AM',
       'rating': 4.7,
       'type': 'Government',
       'emergency': true,
       'beds': 32,
+      'currentQueue': 15,
       'departments': ['Emergency', 'Oncology', 'Neurology'],
     },
     {
       'name': 'Klinik Kesihatan Cheras',
       'distance': '1.8 km',
       'waitingTime': '8 mins',
+      'waitingStatus': 'low',
+      'avgWaitingTime': '10 mins',
+      'peakHours': '8:00 AM - 9:00 AM',
       'rating': 4.2,
       'type': 'Clinic',
       'emergency': false,
       'beds': 12,
+      'currentQueue': 4,
       'departments': ['General', 'Vaccination'],
     },
     {
       'name': 'Hospital Tunku Azizah',
       'distance': '5.6 km',
       'waitingTime': '35 mins',
+      'waitingStatus': 'high',
+      'avgWaitingTime': '30 mins',
+      'peakHours': '2:00 PM - 4:00 PM',
       'rating': 4.6,
       'type': 'Specialist',
       'emergency': true,
       'beds': 28,
+      'currentQueue': 22,
       'departments': ['Maternity', 'Pediatrics', 'NICU'],
     },
   ];
@@ -136,6 +152,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
           // Show route options
         },
         backgroundColor: AppColors.mapColor,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.directions),
         label: const Text('Get Directions'),
       ),
@@ -208,8 +225,10 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
         // Hospital Markers Info (Bottom Sheet Preview)
         DraggableScrollableSheet(
           initialChildSize: 0.3,
-          minChildSize: 0.1,
-          maxChildSize: 0.7,
+          minChildSize: 0.15,
+          maxChildSize: 0.85,
+          snap: true,
+          snapSizes: const [0.3, 0.6, 0.85],
           builder: (context, scrollController) {
             return Container(
               decoration: const BoxDecoration(
@@ -228,13 +247,19 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
               ),
               child: Column(
                 children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+                  // Drag Handle
+                  GestureDetector(
+                    onVerticalDragUpdate: (details) {
+                      // Allow dragging on the handle
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                   Padding(
@@ -263,6 +288,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                   Expanded(
                     child: ListView.builder(
                       controller: scrollController,
+                      physics: const ClampingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       itemCount: _hospitals.length,
                       itemBuilder: (context, index) {
@@ -427,12 +453,171 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 25),
+
+                    // WAITING TIME SECTION - PROMINENT DISPLAY
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            _getWaitingTimeColor(hospital['waitingStatus']),
+                            _getWaitingTimeColor(hospital['waitingStatus']).withValues(alpha: 0.7),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getWaitingTimeColor(hospital['waitingStatus']).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.access_time_filled,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Current Wait Time',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    hospital['waitingTime'],
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              _getWaitingTimeLabel(hospital['waitingStatus']),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 20),
+
+                    // Waiting Time Analytics
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGreen,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildWaitingTimeStat(
+                                Icons.history,
+                                'Avg Wait',
+                                hospital['avgWaitingTime'],
+                              ),
+                              Container(
+                                height: 40,
+                                width: 1,
+                                color: AppColors.primaryColor.withValues(alpha:0.2),
+                              ),
+                              _buildWaitingTimeStat(
+                                Icons.people_outline,
+                                'In Queue',
+                                '${hospital['currentQueue']} people',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.trending_up,
+                                size: 18,
+                                color: AppColors.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Peak Hours',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    Text(
+                                      hospital['peakHours'],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Basic Information
+                    const Text(
+                      'Hospital Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     _buildInfoRow(Icons.location_on, 'Distance', hospital['distance']),
-                    _buildInfoRow(Icons.access_time, 'Waiting Time', hospital['waitingTime']),
                     _buildInfoRow(Icons.bed, 'Available Beds', '${hospital['beds']} beds'),
                     if (hospital['emergency'])
                       _buildInfoRow(Icons.emergency, 'Emergency', 'Available'),
+
                     const SizedBox(height: 20),
                     const Text(
                       'Departments',
@@ -466,7 +651,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                             label: const Text('Get Directions'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.mapColor,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              padding: const EdgeInsets.symmetric(vertical: 15)
                             ),
                           ),
                         ),
@@ -495,6 +680,34 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
     );
   }
 
+  Widget _buildWaitingTimeStat(IconData icon, String label, String value) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.primaryColor, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -520,5 +733,33 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
         ],
       ),
     );
+  }
+
+  // Helper method to get waiting time color based on status
+  Color _getWaitingTimeColor(String status) {
+    switch (status) {
+      case 'low':
+        return AppColors.success; // Green: <15 mins
+      case 'medium':
+        return AppColors.warning; // Yellow: 15-30 mins
+      case 'high':
+        return AppColors.error; // Red: >30 mins
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  // Helper method to get waiting time text color
+  String _getWaitingTimeLabel(String status) {
+    switch (status) {
+      case 'low':
+        return 'Low Wait';
+      case 'medium':
+        return 'Moderate Wait';
+      case 'high':
+        return 'Long Wait';
+      default:
+        return 'Unknown';
+    }
   }
 }

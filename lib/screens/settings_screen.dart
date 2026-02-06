@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'edit_profile_screen.dart';
+import 'change_password_screen.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -28,13 +31,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.person_outline,
             title: 'Edit Profile',
             subtitle: 'Update your personal information',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+              );
+            },
           ),
           _buildSettingTile(
             icon: Icons.lock_outline,
             title: 'Change Password',
             subtitle: 'Update your security credentials',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen())
+              );
+            },
           ),
           _buildSettingTile(
             icon: Icons.fingerprint,
@@ -464,8 +477,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                // Handle logout
+                Navigator.pop(context); // close dialog
+
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const LoginScreen(),
+                  ),
+                      (route) => false, // 💣 nukes navigation history
+                );
               },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.error,
@@ -477,4 +496,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
 }

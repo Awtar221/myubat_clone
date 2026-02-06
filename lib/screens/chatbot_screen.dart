@@ -12,6 +12,7 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  String _selectedLanguage = 'English'; //will me used in the fucntional model later on
 
   final List<Map<String, dynamic>> _messages = [
     {
@@ -99,13 +100,65 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 ),
                 Text(
                   'Online',
-                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(fontSize: 12, color: Color.fromARGB(179, 255, 255, 255)),
                 ),
               ],
             ),
           ],
         ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            tooltip: 'Select Language',
+            onSelected: (String value) {
+              setState(() {
+                _selectedLanguage = value;
+              });
+              _addLanguageChangeMessage(value);
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'English',
+                child: Row(
+                  children: [
+                    Text('🇬🇧', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 10),
+                    Text('English'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Bahasa Melayu',
+                child: Row(
+                  children: [
+                    Text('🇲🇾', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 10),
+                    Text('Bahasa Melayu'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: '中文',
+                child: Row(
+                  children: [
+                    Text('🇨🇳', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 10),
+                    Text('中文 (Chinese)'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'தமிழ்',
+                child: Row(
+                  children: [
+                    Text('🇮🇳', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 10),
+                    Text('தமிழ் (Tamil)'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
@@ -162,7 +215,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha:0.5),
+                  color: Color.fromARGB(13, 0, 0, 0),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 ),
@@ -220,6 +273,31 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         ],
       ),
     );
+  }
+
+  void _addLanguageChangeMessage(String language) {
+    final greetings = {
+      'English': 'Language changed to English. How can I help you?',
+      'Bahasa Melayu': 'Bahasa telah ditukar ke Bahasa Melayu. Bagaimana saya boleh membantu anda?',
+      '中文': '语言已更改为中文。我能帮您什么？',
+      'தமிழ்': 'மொழி தமிழுக்கு மாற்றப்பட்டது. நான் உங்களுக்கு எப்படி உதவ முடியும்?',
+    };
+
+    setState(() {
+      _messages.add({
+        'text': greetings[language] ?? 'Language changed.',
+        'isUser': false,
+        'timestamp': TimeOfDay.now().format(context),
+      });
+    });
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Widget _buildSuggestionChip(String label) {

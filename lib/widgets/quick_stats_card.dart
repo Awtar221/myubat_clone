@@ -7,22 +7,22 @@ class QuickStatsCard extends StatelessWidget {
   final String subtitle;
 
   const QuickStatsCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
     required this.subtitle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha:0.2),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha:0.3),
           width: 1,
         ),
       ),

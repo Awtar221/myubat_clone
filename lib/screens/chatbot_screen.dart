@@ -12,7 +12,6 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String _selectedLanguage = 'English'; //will me used in the fucntional model later on
 
   final List<Map<String, dynamic>> _messages = [
     {
@@ -48,7 +47,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
         _messages.add({
-          'text': 'This is a placeholder response. In the actual app, I would provide helpful information about your medications, dosages, and health queries.',
+          'text':
+              'This is a placeholder response. In the actual app, I would provide helpful information about your medications, dosages, and health queries.',
           'isUser': false,
           'timestamp': TimeOfDay.now().format(context),
         });
@@ -100,7 +100,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 ),
                 Text(
                   'Online',
-                  style: TextStyle(fontSize: 12, color: Color.fromARGB(179, 255, 255, 255)),
+                  style: TextStyle(
+                      fontSize: 12, color: Color.fromARGB(179, 255, 255, 255)),
                 ),
               ],
             ),
@@ -111,9 +112,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             icon: const Icon(Icons.language),
             tooltip: 'Select Language',
             onSelected: (String value) {
-              setState(() {
-                _selectedLanguage = value;
-              });
               _addLanguageChangeMessage(value);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -278,9 +276,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void _addLanguageChangeMessage(String language) {
     final greetings = {
       'English': 'Language changed to English. How can I help you?',
-      'Bahasa Melayu': 'Bahasa telah ditukar ke Bahasa Melayu. Bagaimana saya boleh membantu anda?',
+      'Bahasa Melayu':
+          'Bahasa telah ditukar ke Bahasa Melayu. Bagaimana saya boleh membantu anda?',
       '中文': '语言已更改为中文。我能帮您什么？',
-      'தமிழ்': 'மொழி தமிழுக்கு மாற்றப்பட்டது. நான் உங்களுக்கு எப்படி உதவ முடியும்?',
+      'தமிழ்':
+          'மொழி தமிழுக்கு மாற்றப்பட்டது. நான் உங்களுக்கு எப்படி உதவ முடியும்?',
     };
 
     setState(() {

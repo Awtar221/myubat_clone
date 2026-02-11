@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../data/repositories/user_repository.dart';
 import '../constants/app_colors.dart';
 import 'home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,13 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _rememberMe = false;
-
-  // Sample user credentials for testing
-  final Map<String, String> _validUsers = {
-    'admin@myubat.gov.my': 'admin123',
-    'user@myubat.gov.my': 'user123',
-    'test@gmail.com': 'test123',
-  };
 
   @override
   void dispose() {
@@ -40,35 +36,76 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    // Check credentials
-    if (_validUsers.containsKey(email) && _validUsers[email] == password) {
-      // Successful login
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+    try {
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = userCredential.user;
+      if (user != null) {
+        final uid = user.uid;
+        try {
+          await UserRepository().touchLastLogin(uid);
+          debugPrint('[auth] touchLastLogin success for uid=$uid');
+        } catch (e, st) {
+          debugPrint('[auth] touchLastLogin failed for uid=$uid: $e');
+          debugPrintStack(stackTrace: st);
+        }
+      } else {
+        debugPrint('[auth] login succeeded but userCredential.user is null');
       }
-    } else {
-      // Failed login
-      setState(() {
-        _isLoading = false;
-      });
 
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_friendlyAuthMessage(e)),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login failed. Please try again.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid email or password'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+        });
       }
+    }
+  }
+
+  String _friendlyAuthMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'invalid-credential':
+      case 'user-not-found':
+      case 'wrong-password':
+        return 'Incorrect email or password.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'network-request-failed':
+        return 'Network error. Check your connection and try again.';
+      default:
+        return e.message ?? 'Unable to sign in. Please try again.';
     }
   }
 
@@ -234,7 +271,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Forgot password action
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Password reset feature coming soon!'),
+                              content:
+                                  Text('Password reset feature coming soon!'),
                             ),
                           );
                         },
@@ -262,66 +300,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
                           : const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Test Credentials Info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreen,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primaryColor.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: AppColors.primaryColor,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Test Credentials',
+                              'Login',
                               style: TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primaryColor,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Email: admin@myubat.gov.my\nPassword: admin123',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
 
@@ -337,10 +331,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Registration feature coming soon!'),
-                            ),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const RegisterScreen()),
                           );
                         },
                         child: const Text(

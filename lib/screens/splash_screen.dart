@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:mysejahtera_clone/screens/login_screen.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'home_screen.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,13 +12,16 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  Timer? _navTimer;
 
   @override
   void initState() {
     super.initState();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -28,15 +33,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animationController.forward();
 
-    Timer(const Duration(seconds: 1), () {
+    _navTimer = Timer(const Duration(seconds: 1), () {
+      if (!mounted) return;
+
+      final user = FirebaseAuth.instance.currentUser;
+      final nextScreen = user == null ? const LoginScreen() : const HomeScreen();
+
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => nextScreen),
       );
     });
   }
 
   @override
   void dispose() {
+    _navTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
@@ -54,7 +65,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Icon Placeholder
                 Container(
                   width: 120,
                   height: 120,
@@ -63,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha:1.0),
+                        color: Colors.black.withValues(alpha: 1.0),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),

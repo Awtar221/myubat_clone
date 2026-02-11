@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../data/repositories/user_repository.dart';
 import '../widgets/feature_card.dart';
 import '../widgets/medication_reminder_card.dart';
 import '../widgets/quick_stats_card.dart';
@@ -83,12 +86,54 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeContent extends StatelessWidget {
   const HomeContent({super.key});
 
+  Future<void> _manualTouchLastLogin(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      debugPrint('[debug] manual touchLastLogin skipped: currentUser is null');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No signed in user.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await UserRepository().touchLastLogin(user.uid);
+      debugPrint('[debug] manual touchLastLogin done for uid=${user.uid}');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('manual touchLastLogin done'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e, st) {
+      debugPrint('[debug] manual touchLastLogin failed: $e');
+      debugPrintStack(stackTrace: st);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('manual touchLastLogin failed'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MyUbat'),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              tooltip: 'Debug touchLastLogin',
+              onPressed: () => _manualTouchLastLogin(context),
+            ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
@@ -198,7 +243,8 @@ class HomeContent extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const ChatbotScreen()),
                             );
                           },
                         ),
@@ -213,7 +259,8 @@ class HomeContent extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const HospitalMapScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const HospitalMapScreen()),
                             );
                           },
                         ),
@@ -232,7 +279,9 @@ class HomeContent extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const MedicationTrackerScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const MedicationTrackerScreen()),
                             );
                           },
                         ),
@@ -247,7 +296,8 @@ class HomeContent extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const AppointmentsScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const AppointmentsScreen()),
                             );
                           },
                         ),
@@ -281,7 +331,9 @@ class HomeContent extends StatelessWidget {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const MedicationTrackerScreen()),
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const MedicationTrackerScreen()),
                           );
                         },
                         child: const Text('View All'),

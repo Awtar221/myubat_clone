@@ -1,0 +1,29 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "myubatplus",
+          "appId": "1:118836098367:android:d36eae637e5018c4374f8a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "myubatplus",
+          "configurations": {
+            "android": "1:118836098367:android:d36eae637e5018c4374f8a",
+            "ios": "1:118836098367:ios:2616c64c20674984374f8a",
+            "macos": "1:118836098367:ios:2616c64c20674984374f8a",
+            "web": "1:118836098367:web:cdb35fda233becba374f8a",
+            "windows": "1:118836098367:web:146f80f53be13152374f8a"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

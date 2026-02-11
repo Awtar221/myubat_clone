@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import 'edit_profile_screen.dart';
@@ -25,7 +26,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         children: [
-          // Account Section
           _buildSectionHeader('Account'),
           _buildSettingTile(
             icon: Icons.person_outline,
@@ -45,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ChangePasswordScreen())
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
               );
             },
           ),
@@ -63,10 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: AppColors.primaryColor,
             ),
           ),
-
           const Divider(height: 30),
-
-          // Notifications Section
           _buildSectionHeader('Notifications'),
           _buildSettingTile(
             icon: Icons.notifications_outlined,
@@ -90,10 +87,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _medicationReminders,
               onChanged: _notificationsEnabled
                   ? (value) {
-                setState(() {
-                  _medicationReminders = value;
-                });
-              }
+                      setState(() {
+                        _medicationReminders = value;
+                      });
+                    }
                   : null,
               activeThumbColor: AppColors.primaryColor,
             ),
@@ -106,18 +103,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _appointmentReminders,
               onChanged: _notificationsEnabled
                   ? (value) {
-                setState(() {
-                  _appointmentReminders = value;
-                });
-              }
+                      setState(() {
+                        _appointmentReminders = value;
+                      });
+                    }
                   : null,
               activeThumbColor: AppColors.primaryColor,
             ),
           ),
-
           const Divider(height: 30),
-
-          // Appearance Section
           _buildSectionHeader('Appearance'),
           _buildSettingTile(
             icon: Icons.language_outlined,
@@ -125,10 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: 'English',
             onTap: _showLanguageDialog,
           ),
-
           const Divider(height: 30),
-
-          // Privacy & Security
           _buildSectionHeader('Privacy & Security'),
           _buildSettingTile(
             icon: Icons.privacy_tip_outlined,
@@ -148,10 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: 'Manage data sharing preferences',
             onTap: () {},
           ),
-
           const Divider(height: 30),
-
-          // Support Section
           _buildSectionHeader('Support'),
           _buildSettingTile(
             icon: Icons.help_outline,
@@ -177,10 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: 'Rate us on the app store',
             onTap: () {},
           ),
-
           const Divider(height: 30),
-
-          // About Section
           _buildSectionHeader('About'),
           _buildSettingTile(
             icon: Icons.info_outline,
@@ -200,10 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: 'View third-party licenses',
             onTap: () {},
           ),
-
           const SizedBox(height: 20),
-
-          // Logout Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: OutlinedButton.icon(
@@ -220,7 +202,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 30),
         ],
       ),
@@ -298,39 +279,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildLanguageOption(
-                    'English',
-                    'en',
-                    selectedLanguage,
-                        (value) {
-                      setState(() {
-                        selectedLanguage = value;
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
-                  _buildLanguageOption(
-                    'Bahasa Melayu',
-                    'ms',
-                    selectedLanguage,
-                        (value) {
-                      setState(() {
-                        selectedLanguage = value;
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
-                  _buildLanguageOption(
-                    '中文',
-                    'zh',
-                    selectedLanguage,
-                        (value) {
-                      setState(() {
-                        selectedLanguage = value;
-                      });
-                      Navigator.pop(context);
-                    },
-                  ),
+                  _buildLanguageOption('English', 'en', selectedLanguage,
+                      (value) {
+                    setState(() {
+                      selectedLanguage = value;
+                    });
+                    Navigator.pop(context);
+                  }),
+                  _buildLanguageOption('Bahasa Melayu', 'ms', selectedLanguage,
+                      (value) {
+                    setState(() {
+                      selectedLanguage = value;
+                    });
+                    Navigator.pop(context);
+                  }),
+                  _buildLanguageOption('Chinese', 'zh', selectedLanguage,
+                      (value) {
+                    setState(() {
+                      selectedLanguage = value;
+                    });
+                    Navigator.pop(context);
+                  }),
                 ],
               ),
             );
@@ -341,11 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLanguageOption(
-      String label,
-      String value,
-      String currentValue,
-      Function(String) onSelect,
-      ) {
+    String label,
+    String value,
+    String currentValue,
+    Function(String) onSelect,
+  ) {
     final isSelected = currentValue == value;
 
     return GestureDetector(
@@ -355,13 +324,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? Color.fromARGB(26, 46, 125, 50)
+              ? const Color.fromARGB(26, 46, 125, 50)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryColor
-                : Color.fromARGB(51, 0, 0, 0),
+                : const Color.fromARGB(51, 0, 0, 0),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -375,24 +344,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primaryColor
-                      : Color.fromARGB(153, 0, 0, 0),
+                      : const Color.fromARGB(153, 0, 0, 0),
                   width: 2,
                 ),
-                color: isSelected
-                    ? AppColors.primaryColor
-                    : Colors.transparent,
+                color: isSelected ? AppColors.primaryColor : Colors.transparent,
               ),
               child: isSelected
                   ? Center(
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                  ),
-                ),
-              )
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
                   : null,
             ),
             const SizedBox(width: 12),
@@ -401,9 +368,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? AppColors.primaryColor
-                    : AppColors.textPrimary,
+                color:
+                    isSelected ? AppColors.primaryColor : AppColors.textPrimary,
               ),
             ),
           ],
@@ -447,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SizedBox(height: 15),
               Text(
-                '© 2026 Ministry of Health Malaysia',
+                '? 2026 Ministry of Health Malaysia',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -464,6 +430,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showLogoutDialog() {
+    final rootNavigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -476,14 +445,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // close dialog
+              onPressed: () async {
+                Navigator.pop(context);
 
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) => const LoginScreen(),
-                  ),
-                      (route) => false, // 💣 nukes navigation history
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  final currentUserAfterSignOut =
+                      FirebaseAuth.instance.currentUser;
+                  debugPrint(
+                    'After signOut currentUser = $currentUserAfterSignOut',
+                  );
+                  if (currentUserAfterSignOut != null) {
+                    throw StateError(
+                      'Sign out completed but currentUser is not null.',
+                    );
+                  }
+                } catch (e, st) {
+                  debugPrint('Sign out failed: $e');
+                  debugPrintStack(stackTrace: st);
+                  if (!mounted) return;
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Logout failed. Please try again.'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                if (!mounted) return;
+                rootNavigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
                 );
               },
               style: TextButton.styleFrom(
@@ -496,5 +490,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
 }

@@ -30,3 +30,13 @@ List<String> asStringList(dynamic value) {
   }
   return const <String>[];
 }
+
+Map<String, dynamic>? asStringDynamicMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((key, val) => MapEntry(key.toString(), val));
+  }
+  return null;
+}

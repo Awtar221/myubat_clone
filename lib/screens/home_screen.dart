@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
 import '../widgets/feature_card.dart';
 import '../widgets/medication_reminder_card.dart';
@@ -12,6 +13,7 @@ import 'medication_tracker_screen.dart';
 import 'appointments_screen.dart';
 import 'settings_screen.dart';
 import 'profile_screen.dart';
+import 'profile_setup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  bool _didRunProfileGate = false;
 
   final List<Widget> _screens = [
     const HomeContent(),
@@ -29,6 +32,73 @@ class _HomeScreenState extends State<HomeScreen> {
     const AppointmentsScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runProfileGateFallback();
+    });
+  }
+
+  Future<void> _runProfileGateFallback() async {
+    if (!mounted || _didRunProfileGate) {
+      return;
+    }
+    _didRunProfileGate = true;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+
+    final repository = UserRepository();
+    try {
+      final profile = await repository.getUserProfile(user.uid);
+      if (!mounted) return;
+
+      if (profile?.profileCompleted == true) {
+        return;
+      }
+
+      final email = (user.email ?? '').trim();
+      final fallbackDisplayName = _fallbackDisplayName(
+        profile: profile,
+        email: email,
+      );
+
+      if (profile == null) {
+        await repository.createUserProfile(
+            user.uid, email, fallbackDisplayName);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ProfileSetupScreen(
+            initialDisplayName: fallbackDisplayName,
+          ),
+        ),
+      );
+    } catch (e, st) {
+      debugPrint('Home profile gate fallback failed: $e');
+      debugPrintStack(stackTrace: st);
+    }
+  }
+
+  String _fallbackDisplayName({AppUser? profile, required String email}) {
+    final profileName = profile?.displayName.trim() ?? '';
+    if (profileName.isNotEmpty) {
+      return profileName;
+    }
+
+    final profileEmail = profile?.email.trim() ?? '';
+    final candidateEmail = profileEmail.isNotEmpty ? profileEmail : email;
+    if (candidateEmail.isNotEmpty) {
+      return candidateEmail.split('@').first;
+    }
+    return 'User';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +192,79 @@ class HomeContent extends StatelessWidget {
     }
   }
 
+  Widget _buildDynamicWelcomeBlock() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) {
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome back,',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color.fromRGBO(255, 255, 255, 0.7),
+            ),
+          ),
+          SizedBox(height: 5),
+          Text(
+            'User',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
+      );
+    }
+
+    return StreamBuilder<AppUser>(
+      stream: UserRepository().userProfileStream(uid),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final email = (data?.email ?? '').trim();
+        final displayName = (data?.displayName ?? '').trim();
+        final resolvedName = displayName.isNotEmpty
+            ? displayName
+            : (email.isNotEmpty ? email.split('@').first : 'User');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Welcome back,',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color.fromRGBO(255, 255, 255, 0.7),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              resolvedName,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            if (email.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                email,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,23 +313,7 @@ class HomeContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Welcome back,',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color.fromRGBO(255, 255, 255, 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      const Text(
-                        'Ahmad Abdullah',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                      _buildDynamicWelcomeBlock(),
                       // Quick Stats
                       Row(
                         children: const [

@@ -22,6 +22,7 @@ class UserRepository {
       uid: uid,
       email: email,
       displayName: displayName,
+      profileCompleted: false,
       photoURL: null,
     ).toMapForCreate()
       ..addAll(<String, dynamic>{
@@ -31,6 +32,73 @@ class UserRepository {
       });
 
     await _userDocRef(uid).set(payload, SetOptions(merge: true));
+  }
+
+  Future<AppUser?> getUserProfile(String uid) async {
+    final snapshot = await _userDocRef(uid).get();
+    final data = snapshot.data();
+    if (data == null) {
+      return null;
+    }
+
+    final normalized = Map<String, dynamic>.from(data)
+      ..putIfAbsent(fields.uid, () => uid);
+    return AppUser.fromMap(normalized);
+  }
+
+  Future<void> completeProfile(String uid, String displayName) async {
+    await completeFullProfile(
+      uid,
+      fullName: displayName,
+    );
+  }
+
+  Future<void> completeFullProfile(
+    String uid, {
+    required String fullName,
+    DateTime? dateOfBirth,
+    String? gender,
+    String? phoneNumber,
+    String? address,
+    String? bloodType,
+    int? heightCm,
+    int? weightKg,
+    String? allergies,
+    String? medicalConditions,
+    String? contactName,
+    String? contactNumber,
+  }) async {
+    final normalizedFullName = fullName.trim();
+    final personalMap = <String, dynamic>{
+      fields.fullName: normalizedFullName,
+      fields.dateOfBirth:
+          dateOfBirth != null ? Timestamp.fromDate(dateOfBirth) : null,
+      fields.gender: _trimOrNull(gender),
+      fields.phoneNumber: _trimOrNull(phoneNumber),
+      fields.address: _trimOrNull(address),
+    };
+
+    final healthMap = <String, dynamic>{
+      fields.bloodType: _trimOrNull(bloodType),
+      fields.heightCm: heightCm,
+      fields.weightKg: weightKg,
+      fields.allergies: _trimOrNull(allergies),
+      fields.medicalConditions: _trimOrNull(medicalConditions),
+    };
+
+    final emergencyMap = <String, dynamic>{
+      fields.contactName: _trimOrNull(contactName),
+      fields.contactNumber: _trimOrNull(contactNumber),
+    };
+
+    await _userDocRef(uid).set(<String, dynamic>{
+      fields.displayName: normalizedFullName,
+      fields.profileCompleted: true,
+      fields.updatedAt: FieldValue.serverTimestamp(),
+      fields.personal: personalMap,
+      fields.health: healthMap,
+      fields.emergency: emergencyMap,
+    }, SetOptions(merge: true));
   }
 
   Future<void> updateDisplayName(String uid, String displayName) async {
@@ -64,4 +132,15 @@ class UserRepository {
       await _userDocRef(uid).set(payload, SetOptions(merge: true));
     }
   }
+}
+
+String? _trimOrNull(String? value) {
+  if (value == null) {
+    return null;
+  }
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  return trimmed;
 }

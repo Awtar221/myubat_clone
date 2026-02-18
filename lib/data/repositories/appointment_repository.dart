@@ -24,6 +24,47 @@ class AppointmentRepository {
     });
   }
 
+  Stream<Appointment?> nextUpcomingAppointmentStream(String uid) {
+    return listAppointmentsStream(uid).map((appointments) {
+      final now = DateTime.now();
+
+      Appointment? nextAppointment;
+      for (final appointment in appointments) {
+        final status = appointment.status.toLowerCase();
+        if (status == 'completed' || status == 'cancelled') {
+          continue;
+        }
+
+        final scheduledTime = appointment.scheduledAt.toDate();
+        if (!scheduledTime.isAfter(now)) {
+          continue;
+        }
+
+        if (nextAppointment == null ||
+            scheduledTime.isBefore(nextAppointment.scheduledAt.toDate())) {
+          nextAppointment = appointment;
+        }
+      }
+
+      return nextAppointment;
+    });
+  }
+
+  Future<List<Appointment>> listAppointmentsOnce(String uid) async {
+    QuerySnapshot<Map<String, dynamic>> snapshot;
+    try {
+      snapshot = await _appointmentsCol(uid)
+          .orderBy(fields.startAt, descending: false)
+          .get();
+    } catch (_) {
+      snapshot = await _appointmentsCol(uid).get();
+    }
+
+    return snapshot.docs
+        .map((doc) => Appointment.fromMap(doc.data(), id: doc.id))
+        .toList(growable: false);
+  }
+
   Future<String> upsertAppointment(String uid, Appointment appointment) async {
     final colRef = _appointmentsCol(uid);
     final docRef =

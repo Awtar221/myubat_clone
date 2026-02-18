@@ -20,6 +20,15 @@ class SettingsRepository {
     });
   }
 
+  Future<UserSettings?> getSettingsOnce(String uid) async {
+    final snapshot = await _settingsDoc(uid).get();
+    final data = snapshot.data();
+    if (data == null) {
+      return null;
+    }
+    return UserSettings.fromMap(data);
+  }
+
   Future<void> updateSettings(String uid, Map<String, dynamic> partial) async {
     final payload = Map<String, dynamic>.from(partial)
       ..[fields.updatedAt] = FieldValue.serverTimestamp();

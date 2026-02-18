@@ -64,6 +64,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     final repository = UserRepository();
 
+    repository.touchLastLogin(currentUser.uid).catchError((e, st) {
+      debugPrint('touchLastLogin at splash failed: $e');
+      if (st is StackTrace) {
+        debugPrintStack(stackTrace: st);
+      }
+    });
+
     try {
       final profile = await repository.getUserProfile(currentUser.uid);
       if (profile == null) {

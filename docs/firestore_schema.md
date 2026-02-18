@@ -1,91 +1,137 @@
 # Firestore Schema (MyUbatClone / MyUbatPlus)
 
-## Overview
-- All app data is nested under `users/{uid}`.
-- UI code must not hardcode Firestore paths or field names.
-- Shared schema entry points:
-  - `lib/core/firestore/collections.dart`
-  - `lib/core/firestore/paths.dart`
-  - `lib/core/firestore/firestore_fields.dart`
-  - `lib/data/repositories/*`
+## Canonical Paths
+- `users/{uid}`
+- `users/{uid}/appointments/{appointmentId}`
+- `users/{uid}/medications/{medicationId}`
+- `users/{uid}/medications/{medicationId}/intakes/{intakeId}`
+- `users/{uid}/settings/main`
+- `users/{uid}/chats/{chatId}`
+- `users/{uid}/chats/{chatId}/messages/{messageId}`
+
+## Source of Truth
+- Path constants: `lib/core/firestore/collections.dart`, `lib/core/firestore/paths.dart`
+- Field constants: `lib/core/firestore/firestore_fields.dart`
+- Firestore access: `lib/data/repositories/*`
+
+## Warning
+- Do not invent ad-hoc field names in UI or feature code.
+- Always add new fields to `lib/core/firestore/firestore_fields.dart` first, then update models/repositories/docs.
 
 ## Root Document: `users/{uid}`
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| uid | String | Yes | Firebase Auth UID |
-| email | String | Yes | Login email |
-| displayName | String | Yes | User display name |
-| photoURL | String or null | No | Avatar URL |
-| createdAt | Timestamp | Yes | Created time, written with `serverTimestamp` |
-| updatedAt | Timestamp | Yes | Last update time, written with `serverTimestamp` |
-| lastLoginAt | Timestamp | Yes | Last login time, written with `serverTimestamp` |
+| uid | String | Yes | Firebase Auth uid |
+| email | String | Yes | Account email |
+| displayName | String | Yes | Display name shown in Home/Profile |
+| photoURL | String or null | No | Optional avatar URL |
+| profileCompleted | bool | Yes | Profile gate control |
+| personal | Map<String, dynamic> or null | No | Personal profile map |
+| health | Map<String, dynamic> or null | No | Health profile map |
+| emergency | Map<String, dynamic> or null | No | Emergency profile map |
+| createdAt | Timestamp | Yes | `serverTimestamp` on create |
+| updatedAt | Timestamp | Yes | `serverTimestamp` on updates |
+| lastLoginAt | Timestamp | Yes | `serverTimestamp` on login touch |
 
-## Subcollection: `users/{uid}/appointments/{appointmentId}`
+### `personal` map keys
+- `fullName` (String)
+- `dateOfBirth` (Timestamp or null)
+- `gender` (String or null)
+- `phoneNumber` (String or null)
+- `address` (String or null)
+
+### `health` map keys
+- `bloodType` (String or null)
+- `heightCm` (int or null)
+- `weightKg` (int or null)
+- `allergies` (String or null)
+- `medicalConditions` (String or null)
+
+### `emergency` map keys
+- `contactName` (String or null)
+- `contactNumber` (String or null)
+
+## Appointments: `users/{uid}/appointments/{appointmentId}`
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | title | String | Yes | Appointment title |
-| startAt | Timestamp | Yes | Start time |
-| endAt | Timestamp or null | No | End time |
-| status | String | Yes | `scheduled`, `completed`, or `cancelled` |
-| hospitalName | String or null | No | Hospital name |
-| doctorName | String or null | No | Doctor name |
-| locationText | String or null | No | Location text |
-| notes | String or null | No | Notes |
-| createdAt | Timestamp | Yes | Created time, `serverTimestamp` |
-| updatedAt | Timestamp | Yes | Updated time, `serverTimestamp` |
+| scheduledAt | Timestamp | Yes | Canonical appointment datetime |
+| startAt | Timestamp | No | Legacy compatibility field mirroring `scheduledAt` |
+| endAt | Timestamp or null | No | Optional end time |
+| status | String | Yes | `scheduled` \| `completed` \| `cancelled` |
+| hospitalName | String or null | No | Optional hospital |
+| doctorName | String or null | No | Optional doctor |
+| locationName | String or null | No | Canonical location |
+| locationText | String or null | No | Legacy compatibility location |
+| notes | String or null | No | Optional notes |
+| createdAt | Timestamp | Yes | `serverTimestamp` |
+| updatedAt | Timestamp | Yes | `serverTimestamp` |
 
-## Subcollection: `users/{uid}/medications/{medicationId}`
+## Medications: `users/{uid}/medications/{medicationId}`
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | name | String | Yes | Medication name |
-| dosage | String or null | No | Dosage text such as `500mg` |
-| instructions | String or null | No | Usage instructions |
-| times | List<String> | No | Times list such as `['08:00', '20:00']` |
-| startDate | Timestamp or null | No | Start date |
-| endDate | Timestamp or null | No | End date |
-| isActive | bool | Yes | Active status |
-| createdAt | Timestamp | Yes | Created time, `serverTimestamp` |
-| updatedAt | Timestamp | Yes | Updated time, `serverTimestamp` |
+| dosageText | String or null | No | Canonical dosage text |
+| dosage | String or null | No | Legacy compatibility field mirroring `dosageText` |
+| instructions | String or null | No | Free text instructions |
+| scheduleTimes | List<String> | No | Canonical times in `HH:mm` |
+| times | List<String> | No | Legacy compatibility field mirroring `scheduleTimes` |
+| daysOfWeek | List<int> | No | Optional recurrence days (`1..7`, Monday=1) |
+| startDate | Timestamp or null | No | Optional medication start |
+| endDate | Timestamp or null | No | Optional medication end |
+| isActive | bool | Yes | Active/inactive medication |
+| createdAt | Timestamp | Yes | `serverTimestamp` |
+| updatedAt | Timestamp | Yes | `serverTimestamp` |
 
-## Subcollection: `users/{uid}/chats/{chatId}`
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| title | String or null | No | Thread title |
-| model | String or null | No | Model id, for example `gemini` |
-| createdAt | Timestamp | Yes | Created time, `serverTimestamp` |
-| updatedAt | Timestamp | Yes | Updated time, `serverTimestamp` |
-
-## Subcollection: `users/{uid}/chats/{chatId}/messages/{messageId}`
+## Medication Intakes: `users/{uid}/medications/{medicationId}/intakes/{intakeId}`
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| role | String | Yes | `user` or `assistant` |
-| content | String | Yes | Message content |
-| createdAt | Timestamp | Yes | Created time, `serverTimestamp` |
+| scheduledAt | Timestamp | Yes | Intended intake datetime |
+| taken | bool | Yes | Taken state |
+| takenAt | Timestamp or null | No | Actual taken time |
+| createdAt | Timestamp | Yes | `serverTimestamp` |
+| updatedAt | Timestamp | No | `serverTimestamp` when toggled |
 
-## Settings Document: `users/{uid}/settings/main`
+- Deterministic `intakeId` format: `YYYYMMDD_HHMM`
+- Example: `20260218_0900`
+
+## Settings: `users/{uid}/settings/main`
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | notificationsEnabled | bool | Yes | Notification toggle |
-| language | String | Yes | `en` or `zh` |
-| theme | String | Yes | `system`, `light`, or `dark` |
-| updatedAt | Timestamp | Yes | Updated time, `serverTimestamp` |
+| language | String | Yes | Example: `en`, `zh` |
+| theme | String | Yes | `system` \| `light` \| `dark` |
+| updatedAt | Timestamp | Yes | `serverTimestamp` |
 
-## Naming Rules
-- Use `camelCase` for all fields.
-- Use Firestore `Timestamp` for all time fields.
-- `createdAt` and `updatedAt` must always use `FieldValue.serverTimestamp()`.
-- Paths and collection names must be defined in `collections.dart` and `paths.dart`.
+## Chats: `users/{uid}/chats/{chatId}`
 
-## Write Rules
-- Firestore writes must go through `lib/data/repositories/`.
-- UI code must not call direct hardcoded path chains like `FirebaseFirestore.instance.collection(...).doc(...)`.
-- Any new field must update:
-  - `lib/core/firestore/firestore_fields.dart`
-  - The model `fromMap` and `toMap` logic
-  - This schema document
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| title | String or null | No | Thread title |
+| model | String or null | No | LLM model label |
+| createdAt | Timestamp | Yes | `serverTimestamp` |
+| updatedAt | Timestamp | Yes | `serverTimestamp` |
+
+## Messages: `users/{uid}/chats/{chatId}/messages/{messageId}`
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| role | String | Yes | `user` \| `assistant` |
+| content | String | Yes | Message content |
+| createdAt | Timestamp | Yes | `serverTimestamp` |
+
+## Write Ownership Rules
+- UI must not call Firestore directly.
+- All reads/writes must go through repository classes.
+- `createdAt` and `updatedAt` are repository-managed (`FieldValue.serverTimestamp()`).
+
+## Intended Background Writes
+- `SplashScreen` non-blocking touch updates `users/{uid}.lastLoginAt` and `updatedAt`.
+- `HomeScreen` profile-gate fallback may create `users/{uid}` with minimal profile fields if the profile document is missing.
+- Home medication stream ensures today's missing intake docs idempotently in repository (`ensureTodayIntakes`).
+- These are intentional and required for Home progress/demo behavior.

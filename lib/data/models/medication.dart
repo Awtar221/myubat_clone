@@ -3,42 +3,59 @@ import '../../core/firestore/firestore_fields.dart' as fields;
 import 'model_parsers.dart';
 
 class Medication {
-  const Medication({
+  Medication({
     this.id = '',
     required this.name,
-    this.dosage,
+    String? dosageText,
+    String? dosage,
     this.instructions,
-    this.times = const <String>[],
+    List<String> scheduleTimes = const <String>[],
+    List<String>? times,
     this.startDate,
     this.endDate,
+    this.daysOfWeek = const <int>[],
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
-  });
+  })  : dosageText = dosageText ?? dosage,
+        scheduleTimes = scheduleTimes.isNotEmpty
+            ? scheduleTimes
+            : (times ?? const <String>[]);
 
   final String id;
   final String name;
-  final String? dosage;
+  final String? dosageText;
   final String? instructions;
-  final List<String> times;
+  final List<String> scheduleTimes;
   final Timestamp? startDate;
   final Timestamp? endDate;
+  final List<int> daysOfWeek;
   final bool isActive;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
+  String? get dosage => dosageText;
+  List<String> get times => scheduleTimes;
+
   factory Medication.fromMap(Map<String, dynamic> map, {String id = ''}) {
+    final parsedDosageText = asString(
+      map[fields.dosageText] ?? map[fields.dosage],
+      fallback: '',
+    ).trim();
+    final parsedScheduleTimes = asStringList(
+      map[fields.scheduleTimes] ?? map[fields.times],
+    );
     return Medication(
       id: id,
       name: asString(map[fields.name]),
-      dosage:
-          map[fields.dosage] is String ? map[fields.dosage] as String : null,
+      dosageText: parsedDosageText.isEmpty ? null : parsedDosageText,
       instructions: map[fields.instructions] is String
           ? map[fields.instructions] as String
           : null,
-      times: asStringList(map[fields.times]),
+      scheduleTimes: parsedScheduleTimes,
       startDate: asTimestamp(map[fields.startDate]),
       endDate: asTimestamp(map[fields.endDate]),
+      daysOfWeek: asIntList(map[fields.daysOfWeek]),
       isActive: asBool(map[fields.isActive], fallback: true),
       createdAt: asTimestamp(map[fields.createdAt]),
       updatedAt: asTimestamp(map[fields.updatedAt]),
@@ -48,9 +65,12 @@ class Medication {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       fields.name: name,
-      fields.dosage: dosage,
+      fields.dosageText: dosageText,
+      fields.dosage: dosageText,
       fields.instructions: instructions,
-      fields.times: times,
+      fields.scheduleTimes: scheduleTimes,
+      fields.times: scheduleTimes,
+      fields.daysOfWeek: daysOfWeek,
       fields.startDate: startDate,
       fields.endDate: endDate,
       fields.isActive: isActive,

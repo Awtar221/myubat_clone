@@ -7,7 +7,7 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, write: if isOwner(uid);
 
-      match /{subCollection}/{docId} {
+      match /{document=**} {
         allow read, write: if isOwner(uid);
       }
     }

@@ -24,18 +24,24 @@ const contactName = 'contactName';
 const contactNumber = 'contactNumber';
 
 const title = 'title';
+const scheduledAt = 'scheduledAt';
 const startAt = 'startAt';
 const endAt = 'endAt';
 const status = 'status';
 const notes = 'notes';
 
 const name = 'name';
+const dosageText = 'dosageText';
 const dosage = 'dosage';
 const instructions = 'instructions';
 const isActive = 'isActive';
+const scheduleTimes = 'scheduleTimes';
 const times = 'times';
+const daysOfWeek = 'daysOfWeek';
 const startDate = 'startDate';
 const endDate = 'endDate';
+const taken = 'taken';
+const takenAt = 'takenAt';
 
 const role = 'role';
 const content = 'content';
@@ -43,6 +49,7 @@ const model = 'model';
 
 const hospitalName = 'hospitalName';
 const doctorName = 'doctorName';
+const locationName = 'locationName';
 const locationText = 'locationText';
 
 const notificationsEnabled = 'notificationsEnabled';

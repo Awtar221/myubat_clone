@@ -8,6 +8,9 @@ String userAppointmentsCol(String uid) =>
 String userMedicationsCol(String uid) =>
     '${collections.users}/$uid/${collections.medications}';
 
+String medicationIntakesCol(String uid, String medicationId) =>
+    '${collections.users}/$uid/${collections.medications}/$medicationId/${collections.intakes}';
+
 String userChatsCol(String uid) =>
     '${collections.users}/$uid/${collections.chats}';
 

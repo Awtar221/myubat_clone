@@ -6,6 +6,8 @@ class MedicationReminderCard extends StatelessWidget {
   final String time;
   final String dosage;
   final bool isTaken;
+  final bool isUpdating;
+  final VoidCallback? onToggle;
 
   const MedicationReminderCard({
     super.key,
@@ -13,6 +15,8 @@ class MedicationReminderCard extends StatelessWidget {
     required this.time,
     required this.dosage,
     required this.isTaken,
+    this.isUpdating = false,
+    this.onToggle,
   });
 
   @override
@@ -30,8 +34,8 @@ class MedicationReminderCard extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isTaken
-                    ? AppColors.success.withValues(alpha:0.1)
-                    : AppColors.warning.withValues(alpha:0.1),
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -87,14 +91,19 @@ class MedicationReminderCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!isTaken)
-              IconButton(
-                icon: const Icon(Icons.check_circle_outline),
-                color: AppColors.primaryColor,
-                onPressed: () {
-                  // Mark as taken
-                },
-              ),
+            IconButton(
+              icon: isUpdating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      isTaken ? Icons.undo : Icons.check_circle_outline,
+                    ),
+              color: isTaken ? AppColors.textSecondary : AppColors.primaryColor,
+              onPressed: isUpdating ? null : onToggle,
+            ),
           ],
         ),
       ),

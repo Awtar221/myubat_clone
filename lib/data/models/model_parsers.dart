@@ -31,6 +31,27 @@ List<String> asStringList(dynamic value) {
   return const <String>[];
 }
 
+List<int> asIntList(dynamic value) {
+  if (value is! List) {
+    return const <int>[];
+  }
+  return value
+      .map((item) {
+        if (item is int) {
+          return item;
+        }
+        if (item is num) {
+          return item.toInt();
+        }
+        if (item is String) {
+          return int.tryParse(item);
+        }
+        return null;
+      })
+      .whereType<int>()
+      .toList(growable: false);
+}
+
 Map<String, dynamic>? asStringDynamicMap(dynamic value) {
   if (value is Map<String, dynamic>) {
     return value;

@@ -30,10 +30,19 @@ class Appointment {
   final Timestamp? updatedAt;
 
   factory Appointment.fromMap(Map<String, dynamic> map, {String id = ''}) {
+    final parsedStartAt =
+        asTimestamp(map[fields.scheduledAt] ?? map[fields.startAt]) ??
+            Timestamp.now();
+    final parsedLocation = map[fields.locationName] is String
+        ? map[fields.locationName] as String
+        : (map[fields.locationText] is String
+            ? map[fields.locationText] as String
+            : null);
+
     return Appointment(
       id: id,
       title: asString(map[fields.title]),
-      startAt: asTimestamp(map[fields.startAt]) ?? Timestamp.now(),
+      startAt: parsedStartAt,
       endAt: asTimestamp(map[fields.endAt]),
       status: asString(map[fields.status], fallback: 'scheduled'),
       hospitalName: map[fields.hospitalName] is String
@@ -42,23 +51,26 @@ class Appointment {
       doctorName: map[fields.doctorName] is String
           ? map[fields.doctorName] as String
           : null,
-      locationText: map[fields.locationText] is String
-          ? map[fields.locationText] as String
-          : null,
+      locationText: parsedLocation,
       notes: map[fields.notes] is String ? map[fields.notes] as String : null,
       createdAt: asTimestamp(map[fields.createdAt]),
       updatedAt: asTimestamp(map[fields.updatedAt]),
     );
   }
 
+  Timestamp get scheduledAt => startAt;
+  String? get locationName => locationText;
+
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       fields.title: title,
+      fields.scheduledAt: scheduledAt,
       fields.startAt: startAt,
       fields.endAt: endAt,
       fields.status: status,
       fields.hospitalName: hospitalName,
       fields.doctorName: doctorName,
+      fields.locationName: locationName,
       fields.locationText: locationText,
       fields.notes: notes,
     };

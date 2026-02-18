@@ -20,6 +20,20 @@ class ChatRepository {
     return _firestore.collection(chatMessagesCol(uid, chatId));
   }
 
+  Future<void> ensureThread(
+    String uid,
+    String chatId, {
+    String? title,
+    String? model,
+  }) async {
+    await _chatThreadsCol(uid).doc(chatId).set(<String, dynamic>{
+      fields.title: title,
+      fields.model: model,
+      fields.createdAt: FieldValue.serverTimestamp(),
+      fields.updatedAt: FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<String> createChatThread(
     String uid, {
     String? title,
@@ -40,6 +54,8 @@ class ChatRepository {
     String chatId,
     ChatMessage message,
   ) async {
+    await ensureThread(uid, chatId);
+
     final payload = message.toMap()
       ..[fields.createdAt] = FieldValue.serverTimestamp();
 
@@ -61,5 +77,12 @@ class ChatRepository {
           .map((doc) => ChatMessage.fromMap(doc.data(), id: doc.id))
           .toList(growable: false);
     });
+  }
+
+  Stream<List<ChatMessage>> streamMessages({
+    required String uid,
+    required String threadId,
+  }) {
+    return chatMessagesStream(uid, threadId);
   }
 }

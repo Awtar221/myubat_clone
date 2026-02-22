@@ -16,7 +16,7 @@ class MedicationTrackerScreen extends StatefulWidget {
 class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController =
-      TabController(length: 2, vsync: this);
+  TabController(length: 2, vsync: this);
   final MedicationRepository _medicationRepository = MedicationRepository();
 
   @override
@@ -48,7 +48,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
             Future<void> saveMedication() async {
               final name = nameController.text.trim();
               final scheduleTimes =
-                  _extractScheduleTimes(frequencyController.text);
+              _extractScheduleTimes(frequencyController.text);
               if (name.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -147,15 +147,15 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                       ),
                       child: isSaving
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
                           : const Text('Add Medication'),
                     ),
                   ),
@@ -265,7 +265,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: ListTile(
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           leading: Checkbox(
             value: isCompletedList,
             onChanged: (value) {
@@ -287,7 +287,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
           trailing: Icon(
             isCompletedList ? Icons.check_circle : Icons.medication_outlined,
             color:
-                isCompletedList ? AppColors.success : AppColors.medicationColor,
+            isCompletedList ? AppColors.success : AppColors.medicationColor,
           ),
         ),
       ),
@@ -309,6 +309,8 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         backgroundColor: AppColors.medicationColor,
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.grey,
           indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'Active'),
@@ -330,7 +332,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
           final all = snapshot.data ?? const <Medication>[];
           final active = all.where((m) => m.isActive).toList(growable: false);
           final completed =
-              all.where((m) => !m.isActive).toList(growable: false);
+          all.where((m) => !m.isActive).toList(growable: false);
 
           Widget buildList(List<Medication> items, bool completedList) {
             if (items.isEmpty) {

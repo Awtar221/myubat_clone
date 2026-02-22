@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Colors
-  static const Color primaryColor = Color(0xFF2E7D32); // Medical green
-  static const Color secondaryColor = Color(0xFF66BB6A);
-  static const Color accentColor = Color(0xFF4CAF50);
+  static const Color primaryColor = Color(0xFF7B1FA2);
+  static const Color secondaryColor = Color(0xFFA52ADD);
+  static const Color accentColor = Color(0xFF9125C1);
 
   // Background Colors
   static const Color backgroundColor = Color(0xFFF5F5F5);
@@ -23,14 +23,14 @@ class AppColors {
   static const Color info = Color(0xFF42A5F5);
 
   // Feature Colors
-  static const Color chatbotColor = Color(0xFF1976D2);
-  static const Color mapColor = Color(0xFFD32F2F);
+  static const Color chatbotColor = Color(0xFF7B1FA2);
+  static const Color mapColor = Color(0xFF7B1FA2);
   static const Color medicationColor = Color(0xFF7B1FA2);
-  static const Color appointmentColor = Color(0xFFFF6F00);
+  static const Color appointmentColor = Color(0xFF7B1FA2);
 
   // Gradient Colors
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+    colors: [Color(0xFF7B1FA2), Color(0xFFA52ADD)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

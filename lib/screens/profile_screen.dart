@@ -132,6 +132,7 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               children: [
                 Container(
+                  width: double.infinity,
                   decoration: const BoxDecoration(
                     gradient: AppColors.primaryGradient,
                   ),

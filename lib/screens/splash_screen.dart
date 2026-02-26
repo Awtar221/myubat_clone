@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_colors.dart';
 import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
@@ -38,7 +39,26 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Request permissions on app open (excluding notification)
+    await _requestPermissions();
     _scheduleProfileGateCheck();
+  }
+
+  Future<void> _requestPermissions() async {
+    try {
+      // Request standard permissions needed for maps/scanner
+      await [
+        Permission.location,
+        Permission.camera,
+        Permission.microphone,
+      ].request();
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
+    }
   }
 
   void _scheduleProfileGateCheck() {
@@ -66,9 +86,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     repository.touchLastLogin(currentUser.uid).catchError((e, st) {
       debugPrint('touchLastLogin at splash failed: $e');
-      if (st is StackTrace) {
-        debugPrintStack(stackTrace: st);
-      }
     });
 
     try {
@@ -98,7 +115,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
     } catch (e, st) {
       debugPrint('Splash profile gate failed: $e');
-      debugPrintStack(stackTrace: st);
       if (mounted) {
         setState(() {
           _gateError = 'Unable to verify profile. Please try again.';
@@ -167,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 1.0),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),

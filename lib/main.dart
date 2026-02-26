@@ -5,7 +5,6 @@ import 'screens/splash_screen.dart';
 import 'constants/app_colors.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'services/notification_service.dart';
 
 
 Future<void> main() async {
@@ -15,8 +14,6 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Notification Service
-  await NotificationService().init();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

@@ -2,12 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/firestore/firestore_fields.dart' as fields;
 import '../../core/firestore/paths.dart';
 import '../models/appointment.dart';
+import '../../services/notification/notification_service.dart';
 
 class AppointmentRepository {
-  AppointmentRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  AppointmentRepository({
+    FirebaseFirestore? firestore,
+    NotificationService? notificationService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _notificationService =
+            notificationService ?? NotificationService.instance;
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notificationService;
 
   CollectionReference<Map<String, dynamic>> _appointmentsCol(String uid) {
     return _firestore.collection(userAppointmentsCol(uid));
@@ -69,6 +75,7 @@ class AppointmentRepository {
     final colRef = _appointmentsCol(uid);
     final docRef =
         appointment.id.isEmpty ? colRef.doc() : colRef.doc(appointment.id);
+    final appointmentId = docRef.id;
 
     final payload = appointment.toMap()
       ..[fields.updatedAt] = FieldValue.serverTimestamp();
@@ -78,10 +85,31 @@ class AppointmentRepository {
     }
 
     await docRef.set(payload, SetOptions(merge: true));
-    return docRef.id;
+    await _notificationService.updateEventReminders(
+      eventId: appointmentId,
+      type: NotificationService.typeAppointment,
+      title: 'Schedule Reminder',
+      body: _appointmentReminderBody(appointment),
+      eventTime: appointment.scheduledAt.toDate(),
+      enabled: appointment.remindersEnabled,
+    );
+
+    return appointmentId;
   }
 
   Future<void> deleteAppointment(String uid, String appointmentId) async {
     await _appointmentsCol(uid).doc(appointmentId).delete();
+    await _notificationService.cancelEventReminders(
+      appointmentId,
+      type: NotificationService.typeAppointment,
+    );
+  }
+
+  String _appointmentReminderBody(Appointment appointment) {
+    final location = (appointment.locationName ?? '').trim();
+    if (location.isEmpty) {
+      return 'Upcoming schedule: ${appointment.title}.';
+    }
+    return 'Upcoming schedule: ${appointment.title} at $location.';
   }
 }

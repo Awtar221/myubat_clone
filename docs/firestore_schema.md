@@ -57,6 +57,7 @@
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | title | String | Yes | Appointment title |
+| eventDateTime | Timestamp | Yes | Canonical schedule datetime used by reminders |
 | scheduledAt | Timestamp | Yes | Canonical appointment datetime |
 | startAt | Timestamp | No | Legacy compatibility field mirroring `scheduledAt` |
 | endAt | Timestamp or null | No | Optional end time |
@@ -66,8 +67,15 @@
 | locationName | String or null | No | Canonical location |
 | locationText | String or null | No | Legacy compatibility location |
 | notes | String or null | No | Optional notes |
+| remindersEnabled | bool | Yes | Defaults to `true` when missing (backfill-safe) |
 | createdAt | Timestamp | Yes | `serverTimestamp` |
 | updatedAt | Timestamp | Yes | `serverTimestamp` |
+
+### Reminders (Notifications)
+- `remindersEnabled`: bool, defaults to `true` when missing (backward compatible).
+- `eventDateTime`: Timestamp for reminder datetime (fallback to existing datetime fields in model parsing).
+- Canonical UI/home datetime usage should go through `appointment.scheduledAt` getter.
+- Reminder offsets: `3h`, `1h`, `30m` before event time; offsets already in the past are skipped.
 
 ## Medications: `users/{uid}/medications/{medicationId}`
 
@@ -79,12 +87,20 @@
 | instructions | String or null | No | Free text instructions |
 | scheduleTimes | List<String> | No | Canonical times in `HH:mm` |
 | times | List<String> | No | Legacy compatibility field mirroring `scheduleTimes` |
+| intakeDateTime | Timestamp or null | No | Primary reminder time (fallback to `startDate`) |
 | daysOfWeek | List<int> | No | Optional recurrence days (`1..7`, Monday=1) |
 | startDate | Timestamp or null | No | Optional medication start |
 | endDate | Timestamp or null | No | Optional medication end |
 | isActive | bool | Yes | Active/inactive medication |
+| remindersEnabled | bool | Yes | Defaults to `true` when missing (backfill-safe) |
 | createdAt | Timestamp | Yes | `serverTimestamp` |
 | updatedAt | Timestamp | Yes | `serverTimestamp` |
+
+### Reminders (Notifications)
+- `remindersEnabled`: bool, defaults to `true` when missing (backward compatible).
+- `intakeDateTime`: optional Timestamp used for reminder datetime (repository has fallback behavior).
+- Reminder offsets: `3h`, `1h`, `30m` before intake time; offsets already in the past are skipped.
+- Notes: reminder scheduling/cancellation runs during CRUD flow (create/update/delete) after Firestore write succeeds.
 
 ## Medication Intakes: `users/{uid}/medications/{medicationId}/intakes/{intakeId}`
 
@@ -129,6 +145,16 @@
 - UI must not call Firestore directly.
 - All reads/writes must go through repository classes.
 - `createdAt` and `updatedAt` are repository-managed (`FieldValue.serverTimestamp()`).
+
+## Local Reminder Scheduling Notes
+- Local reminders are scheduled for each event at:
+  - 3 hours before
+  - 1 hour before
+  - 30 minutes before
+- Reminder IDs are deterministic and typed:
+  - `baseId = stableHash("$type:$eventId") % 100000`
+  - reminder IDs: `baseId + 1`, `baseId + 2`, `baseId + 3`
+- Update flow is cancel then reschedule to avoid duplicates.
 
 ## Intended Background Writes
 - `SplashScreen` non-blocking touch updates `users/{uid}.lastLoginAt` and `updatedAt`.

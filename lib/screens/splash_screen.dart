@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_colors.dart';
 import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
+import '../services/notification/notification_service.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'profile_setup_screen.dart';
@@ -56,6 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
         Permission.camera,
         Permission.microphone,
       ].request();
+      await NotificationService.instance.requestPermissionsAndroid();
     } catch (e) {
       debugPrint('Error requesting permissions: $e');
     }
@@ -113,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         );
       }
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('Splash profile gate failed: $e');
       if (mounted) {
         setState(() {

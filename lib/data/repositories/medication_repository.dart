@@ -6,12 +6,18 @@ import '../../core/firestore/paths.dart';
 import '../models/medication.dart';
 import '../models/model_parsers.dart';
 import '../models/today_intake_item.dart';
+import '../../services/notification/notification_service.dart';
 
 class MedicationRepository {
-  MedicationRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  MedicationRepository({
+    FirebaseFirestore? firestore,
+    NotificationService? notificationService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _notificationService =
+            notificationService ?? NotificationService.instance;
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notificationService;
 
   CollectionReference<Map<String, dynamic>> _medicationsCol(String uid) {
     return _firestore.collection(userMedicationsCol(uid));
@@ -255,6 +261,7 @@ class MedicationRepository {
     final colRef = _medicationsCol(uid);
     final docRef =
         medication.id.isEmpty ? colRef.doc() : colRef.doc(medication.id);
+    final medicationId = docRef.id;
 
     final payload = medication.toMap()
       ..[fields.updatedAt] = FieldValue.serverTimestamp();
@@ -264,11 +271,25 @@ class MedicationRepository {
     }
 
     await docRef.set(payload, SetOptions(merge: true));
-    return docRef.id;
+
+    await _notificationService.updateEventReminders(
+      eventId: medicationId,
+      type: NotificationService.typeMedication,
+      title: 'Medication Reminder',
+      body: _medicationReminderBody(medication),
+      eventTime: _resolveMedicationReminderTime(medication),
+      enabled: medication.remindersEnabled,
+    );
+
+    return medicationId;
   }
 
   Future<void> deleteMedication(String uid, String medicationId) async {
     await _medicationsCol(uid).doc(medicationId).delete();
+    await _notificationService.cancelEventReminders(
+      medicationId,
+      type: NotificationService.typeMedication,
+    );
   }
 
   bool _isMedicationScheduledForDay(
@@ -351,5 +372,38 @@ class MedicationRepository {
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$year$month${day}_$hour$minute';
+  }
+
+  DateTime? _resolveMedicationReminderTime(Medication medication) {
+    final explicit = medication.intakeDateTime?.toDate();
+    if (explicit != null) {
+      return explicit;
+    }
+
+    final start = medication.startDate?.toDate();
+    final scheduleTimes = _effectiveScheduleTimes(medication);
+    if (scheduleTimes.isEmpty) {
+      return start;
+    }
+
+    final parsed = _parseTime(scheduleTimes.first);
+    if (parsed == null) {
+      return start;
+    }
+
+    final baseDate = start ?? DateTime.now();
+    return DateTime(
+      baseDate.year,
+      baseDate.month,
+      baseDate.day,
+      parsed[0],
+      parsed[1],
+    );
+  }
+
+  String _medicationReminderBody(Medication medication) {
+    final dosage = (medication.dosageText ?? '').trim();
+    final dosageSegment = dosage.isEmpty ? '' : ' ($dosage)';
+    return 'Upcoming dose: ${medication.name}$dosageSegment.';
   }
 }

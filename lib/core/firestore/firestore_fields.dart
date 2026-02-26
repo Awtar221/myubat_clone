@@ -25,10 +25,12 @@ const contactNumber = 'contactNumber';
 
 const title = 'title';
 const scheduledAt = 'scheduledAt';
+const eventDateTime = 'eventDateTime';
 const startAt = 'startAt';
 const endAt = 'endAt';
 const status = 'status';
 const notes = 'notes';
+const remindersEnabled = 'remindersEnabled';
 
 const name = 'name';
 const dosageText = 'dosageText';
@@ -38,6 +40,7 @@ const isActive = 'isActive';
 const scheduleTimes = 'scheduleTimes';
 const times = 'times';
 const daysOfWeek = 'daysOfWeek';
+const intakeDateTime = 'intakeDateTime';
 const startDate = 'startDate';
 const endDate = 'endDate';
 const taken = 'taken';

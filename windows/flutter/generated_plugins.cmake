@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_localization
+  flutter_timezone
   geolocator_windows
   local_auth_windows
   permission_handler_windows

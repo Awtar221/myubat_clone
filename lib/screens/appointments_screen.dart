@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../constants/app_colors.dart';
 import '../data/models/appointment.dart';
 import '../data/repositories/appointment_repository.dart';
+import '../services/notification/notification_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -67,16 +68,21 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return [];
   }
 
-  Future<void> _showBookAppointmentDialog({Appointment? existingAppointment}) async {
+  Future<void> _showBookAppointmentDialog(
+      {Appointment? existingAppointment}) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return;
     }
 
-    final titleController = TextEditingController(text: existingAppointment?.title);
-    final doctorController = TextEditingController(text: existingAppointment?.doctorName);
-    final locationController = TextEditingController(text: existingAppointment?.locationText);
-    DateTime? selectedDateTime = existingAppointment?.startAt.toDate();
+    final titleController =
+        TextEditingController(text: existingAppointment?.title);
+    final doctorController =
+        TextEditingController(text: existingAppointment?.doctorName);
+    final locationController =
+        TextEditingController(text: existingAppointment?.locationText);
+    DateTime? selectedDateTime = existingAppointment?.scheduledAt.toDate();
+    bool remindersEnabled = existingAppointment?.remindersEnabled ?? true;
     bool isSaving = false;
     List<Map<String, dynamic>> locationSuggestions = [];
 
@@ -112,7 +118,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Text(existingAppointment == null ? 'Add Appointment' : 'Edit Appointment',
+                      Text(
+                          existingAppointment == null
+                              ? 'Add Appointment'
+                              : 'Edit Appointment',
                           style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 24),
@@ -151,11 +160,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           if (_debounce?.isActive ?? false) {
                             _debounce?.cancel();
                           }
-                          _debounce =
-                              Timer(const Duration(milliseconds: 500), () async {
+                          _debounce = Timer(const Duration(milliseconds: 500),
+                              () async {
                             final suggestions = await _searchLocation(value);
                             if (context.mounted) {
-                              setModalState(() => locationSuggestions = suggestions);
+                              setModalState(
+                                  () => locationSuggestions = suggestions);
                             }
                           });
                         },
@@ -195,18 +205,21 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           final date = await showDatePicker(
                             context: context,
                             initialDate: selectedDateTime ?? DateTime.now(),
-                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                            lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                            firstDate: DateTime.now()
+                                .subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now()
+                                .add(const Duration(days: 365 * 2)),
                           );
                           if (date == null) {
                             return;
                           }
-                          if (!mounted) {
+                          if (!context.mounted) {
                             return;
                           }
                           final time = await showTimePicker(
                             context: context,
-                            initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? DateTime.now()),
+                            initialTime: TimeOfDay.fromDateTime(
+                                selectedDateTime ?? DateTime.now()),
                           );
                           if (time == null) {
                             return;
@@ -227,10 +240,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                 size: 22),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey[300]!)),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!)),
                             enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey[200]!)),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[200]!)),
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
@@ -244,6 +259,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                     : Colors.black),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Reminders'),
+                        subtitle: const Text('Reminds you 3h, 1h, 30m before'),
+                        value: remindersEnabled,
+                        activeThumbColor: AppColors.appointmentColor,
+                        onChanged: (value) {
+                          setModalState(() => remindersEnabled = value);
+                        },
                       ),
                       const SizedBox(height: 32),
                       SizedBox(
@@ -276,21 +302,55 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                                   titleController.text.trim(),
                                               startAt: Timestamp.fromDate(
                                                   selectedDateTime!),
-                                              status: existingAppointment?.status ?? 'scheduled',
+                                              eventDateTime: Timestamp.fromDate(
+                                                  selectedDateTime!),
+                                              status:
+                                                  existingAppointment?.status ??
+                                                      'scheduled',
                                               doctorName:
                                                   doctorController.text.trim(),
-                                              locationText:
-                                                  locationController.text
-                                                      .trim(),
+                                              locationText: locationController
+                                                  .text
+                                                  .trim(),
+                                              remindersEnabled:
+                                                  remindersEnabled,
                                             ));
+                                  } on ExactAlarmPermissionException catch (e) {
                                     if (context.mounted) {
-                                      Navigator.pop(context); // CLOSES DIALOG
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Saved, but reminder was not scheduled. ${e.toString()}',
+                                          ),
+                                          backgroundColor: AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                      Navigator.pop(context);
                                     }
+                                    return;
                                   } finally {
                                     if (context.mounted) {
                                       setModalState(() => isSaving = false);
                                     }
                                   }
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (remindersEnabled &&
+                                      !selectedDateTime!
+                                          .isAfter(DateTime.now())) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Saved. Appointment time is in the past, so no reminder was scheduled.',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                  Navigator.pop(context); // CLOSES DIALOG
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.appointmentColor,
@@ -304,7 +364,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                   width: 24,
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2))
-                              : Text(existingAppointment == null ? 'Add Appointment' : 'Update Appointment',
+                              : Text(
+                                  existingAppointment == null
+                                      ? 'Add Appointment'
+                                      : 'Update Appointment',
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -351,7 +414,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   }
 
   Widget _buildAppointmentCard(Appointment appointment) {
-    final isPast = appointment.startAt.toDate().isBefore(DateTime.now());
+    final isPast = appointment.scheduledAt.toDate().isBefore(DateTime.now());
     return Dismissible(
       key: ValueKey(appointment.id),
       direction: DismissDirection.endToStart,
@@ -371,7 +434,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: Colors.grey[100]!)),
         child: ListTile(
-          onTap: () => _showBookAppointmentDialog(existingAppointment: appointment),
+          onTap: () =>
+              _showBookAppointmentDialog(existingAppointment: appointment),
           contentPadding: const EdgeInsets.all(16),
           leading: Container(
             padding: const EdgeInsets.all(12),
@@ -384,9 +448,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           title: Text(appointment.title,
               style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(
-              '${_formatDate(appointment.startAt)} at ${_formatTime(appointment.startAt)}\n${appointment.locationText ?? 'No location'}'),
+              '${_formatDate(appointment.scheduledAt)} at ${_formatTime(appointment.scheduledAt)}\n${appointment.locationText ?? 'No location'}'),
           isThreeLine: true,
-          trailing: const Icon(Icons.edit_outlined, size: 20, color: AppColors.appointmentColor),
+          trailing: const Icon(Icons.edit_outlined,
+              size: 20, color: AppColors.appointmentColor),
         ),
       ),
     );
@@ -422,10 +487,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
             }
             final now = DateTime.now();
             final upcoming = snapshot.data!
-                .where((a) => a.startAt.toDate().isAfter(now))
+                .where((a) => a.scheduledAt.toDate().isAfter(now))
                 .toList();
             final past = snapshot.data!
-                .where((a) => !a.startAt.toDate().isAfter(now))
+                .where((a) => !a.scheduledAt.toDate().isAfter(now))
                 .toList();
             return TabBarView(
               controller: _tabController,

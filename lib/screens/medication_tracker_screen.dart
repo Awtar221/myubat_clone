@@ -7,6 +7,7 @@ import '../data/models/medication.dart';
 import '../data/models/today_intake_item.dart';
 import '../data/repositories/medication_repository.dart';
 import '../services/ai/gemini_service.dart';
+import '../services/notification/notification_service.dart';
 import '../widgets/medication_reminder_card.dart';
 
 class MedicationTrackerScreen extends StatefulWidget {
@@ -93,7 +94,8 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
       if (result.containsKey('error')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(result['error']!), backgroundColor: AppColors.error),
+              content: Text(result['error']!),
+              backgroundColor: AppColors.error),
         );
       } else {
         onScanned(result);
@@ -102,16 +104,23 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Error: $e'), backgroundColor: AppColors.error),
         );
       }
     }
   }
 
   Future<void> _showAddMedicationDialog(
-      {Medication? existingMedication, Map<String, String>? initialData}) async {
+      {Medication? existingMedication,
+      Map<String, String>? initialData}) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+
+    final initialIntakeDateTime =
+        existingMedication?.intakeDateTime?.toDate() ??
+            existingMedication?.startDate?.toDate() ??
+            DateTime.now().add(const Duration(hours: 1));
 
     final nameController = TextEditingController(
         text: existingMedication?.name ?? initialData?['name']);
@@ -122,9 +131,11 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     final timeController = TextEditingController(
         text: existingMedication?.times.isNotEmpty == true
             ? existingMedication!.times.first
-            : '');
+            : '${initialIntakeDateTime.hour.toString().padLeft(2, '0')}:${initialIntakeDateTime.minute.toString().padLeft(2, '0')}');
 
     bool isSaving = false;
+    bool remindersEnabled = existingMedication?.remindersEnabled ?? true;
+    DateTime selectedIntakeDateTime = initialIntakeDateTime;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -215,15 +226,92 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                         onTap: () async {
                           final TimeOfDay? picked = await showTimePicker(
                             context: context,
-                            initialTime: TimeOfDay.now(),
+                            initialTime: TimeOfDay.fromDateTime(
+                              selectedIntakeDateTime,
+                            ),
                           );
                           if (picked != null) {
                             final timeString =
                                 '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
                             setModalState(() {
                               timeController.text = timeString;
+                              selectedIntakeDateTime = DateTime(
+                                selectedIntakeDateTime.year,
+                                selectedIntakeDateTime.month,
+                                selectedIntakeDateTime.day,
+                                picked.hour,
+                                picked.minute,
+                              );
                             });
                           }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedIntakeDateTime,
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 365),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365 * 3),
+                            ),
+                          );
+                          if (date == null || !context.mounted) {
+                            return;
+                          }
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                              selectedIntakeDateTime,
+                            ),
+                          );
+                          if (time == null) {
+                            return;
+                          }
+                          setModalState(() {
+                            selectedIntakeDateTime = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              time.hour,
+                              time.minute,
+                            );
+                            timeController.text =
+                                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                          });
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Intake Date & Time',
+                            prefixIcon: const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.medicationColor,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          child: Text(_formatDateTime(selectedIntakeDateTime)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Reminders'),
+                        subtitle: const Text(
+                          'Reminds you 3h, 1h, 30m before',
+                        ),
+                        value: remindersEnabled,
+                        activeThumbColor: AppColors.medicationColor,
+                        onChanged: (value) {
+                          setModalState(() {
+                            remindersEnabled = value;
+                          });
                         },
                       ),
                       const SizedBox(height: 32),
@@ -236,6 +324,12 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                               : () async {
                                   final name = nameController.text.trim();
                                   if (name.isEmpty) return;
+                                  final scheduleTime = timeController.text
+                                          .trim()
+                                          .isEmpty
+                                      ? '${selectedIntakeDateTime.hour.toString().padLeft(2, '0')}:${selectedIntakeDateTime.minute.toString().padLeft(2, '0')}'
+                                      : timeController.text.trim();
+
                                   setModalState(() => isSaving = true);
                                   try {
                                     final medication = Medication(
@@ -244,24 +338,56 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                                       dosage: dosageController.text.trim(),
                                       instructions:
                                           frequencyController.text.trim(),
-                                      scheduleTimes: [
-                                        timeController.text.trim()
-                                      ],
+                                      scheduleTimes: <String>[scheduleTime],
+                                      remindersEnabled: remindersEnabled,
+                                      intakeDateTime: Timestamp.fromDate(
+                                        selectedIntakeDateTime,
+                                      ),
                                       startDate:
                                           existingMedication?.startDate ??
-                                              Timestamp.now(),
+                                              Timestamp.fromDate(
+                                                selectedIntakeDateTime,
+                                              ),
                                       isActive: true,
                                     );
                                     await _medicationRepository
                                         .upsertMedication(uid, medication);
+                                  } on ExactAlarmPermissionException catch (e) {
                                     if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Saved, but reminder was not scheduled. ${e.toString()}',
+                                          ),
+                                          backgroundColor: AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
                                       Navigator.of(context).pop();
                                     }
+                                    return;
                                   } finally {
                                     if (mounted) {
                                       setModalState(() => isSaving = false);
                                     }
                                   }
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (remindersEnabled &&
+                                      !selectedIntakeDateTime
+                                          .isAfter(DateTime.now())) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Saved. Reminder time is in the past, so no reminder was scheduled.',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                  Navigator.of(context).pop();
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.medicationColor,
@@ -321,6 +447,16 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         fillColor: Colors.grey[50],
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final year = dateTime.year.toString().padLeft(4, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$year-$month-$day $hour:$minute $period';
   }
 
   String _formatTime(Timestamp ts) {
@@ -392,7 +528,8 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     );
   }
 
-  Widget _buildList(String uid, List<TodayIntakeItem> items, bool completedList) {
+  Widget _buildList(
+      String uid, List<TodayIntakeItem> items, bool completedList) {
     if (items.isEmpty) {
       return Center(
           child: Text(completedList ? 'No completed doses' : 'No active doses',
@@ -414,7 +551,8 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
               color: AppColors.error,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+            child: const Icon(Icons.delete_outline_rounded,
+                color: Colors.white, size: 28),
           ),
           onDismissed: (_) => _deleteMedication(uid, item.medicationId),
           child: MedicationReminderCard(
@@ -424,14 +562,22 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
             dosage: item.dosageText,
             instructions: item.instructions,
             isTaken: item.taken,
-            isUpdating: _pendingToggles.contains('${item.medicationId}:${item.intakeId}'),
+            isUpdating: _pendingToggles
+                .contains('${item.medicationId}:${item.intakeId}'),
             onToggle: () => _toggleIntake(uid, item),
-            onTap: item.taken ? null : () {
-              _medicationRepository.listMedicationsOnce(uid).then((allMeds) {
-                final med = allMeds.firstWhere((m) => m.id == item.medicationId);
-                if (mounted) _showAddMedicationDialog(existingMedication: med);
-              });
-            },
+            onTap: item.taken
+                ? null
+                : () {
+                    _medicationRepository
+                        .listMedicationsOnce(uid)
+                        .then((allMeds) {
+                      final med =
+                          allMeds.firstWhere((m) => m.id == item.medicationId);
+                      if (mounted) {
+                        _showAddMedicationDialog(existingMedication: med);
+                      }
+                    });
+                  },
           ),
         );
       },

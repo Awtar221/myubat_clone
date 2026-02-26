@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'constants/app_colors.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'services/notification_service.dart';
 
 
 Future<void> main() async {
@@ -12,6 +14,9 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Notification Service
+  await NotificationService().init();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -22,24 +27,50 @@ Future<void> main() async {
 }
 
 
-class MyUbatApp extends StatelessWidget {
+class MyUbatApp extends StatefulWidget {
   const MyUbatApp({super.key});
+
+  static State<MyUbatApp>? of(BuildContext context) => context.findAncestorStateOfType<_MyUbatAppState>();
+
+  @override
+  State<MyUbatApp> createState() => _MyUbatAppState();
+}
+
+class _MyUbatAppState extends State<MyUbatApp> {
+  Locale _locale = const Locale('en');
+
+  void setLocale(Locale value) {
+    setState(() {
+      _locale = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MyUbat',
       debugShowCheckedModeBanner: false,
+      locale: _locale,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ms'),
+        Locale('zh'),
+      ],
       theme: ThemeData(
         primarySwatch: Colors.blue,
         primaryColor: AppColors.primaryColor,
         scaffoldBackgroundColor: AppColors.backgroundColor,
         fontFamily: 'Poppins',
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           elevation: 0,
           backgroundColor: AppColors.primaryColor,
-          iconTheme: const IconThemeData(color: Colors.white),
-          titleTextStyle: const TextStyle(
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,

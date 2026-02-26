@@ -32,7 +32,7 @@ class HospitalCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color.fromARGB(26, 211, 47, 47),
+                      color: const Color.fromARGB(26, 211, 47, 47),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -125,13 +125,13 @@ class HospitalCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Color.fromARGB(26, 229, 115, 115),
+                    color: const Color.fromARGB(26, 229, 115, 115),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Color.fromARGB(77, 229, 115, 115),
+                      color: const Color.fromARGB(77, 229, 115, 115),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -139,7 +139,7 @@ class HospitalCard extends StatelessWidget {
                         size: 16,
                         color: AppColors.error,
                       ),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text(
                         'Emergency Services Available',
                         style: TextStyle(

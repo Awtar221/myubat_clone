@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/firestore/firestore_fields.dart' as fields;
 import '../../core/firestore/paths.dart';
 import '../models/appointment.dart';
+import '../../services/notification_service.dart';
 
 class AppointmentRepository {
   AppointmentRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notifications = NotificationService();
 
   CollectionReference<Map<String, dynamic>> _appointmentsCol(String uid) {
     return _firestore.collection(userAppointmentsCol(uid));
@@ -78,6 +80,29 @@ class AppointmentRepository {
     }
 
     await docRef.set(payload, SetOptions(merge: true));
+
+    // Schedule Notification for Appointment
+    final scheduledDate = appointment.startAt.toDate();
+    // Schedule exactly 30 minutes before
+    final notificationTime = scheduledDate.subtract(const Duration(minutes: 30));
+    
+    if (notificationTime.isAfter(DateTime.now())) {
+      await _notifications.scheduleNotification(
+        id: scheduledDate.millisecondsSinceEpoch ~/ 1000,
+        title: 'Upcoming Appointment',
+        body: 'Your appointment "${appointment.title}" starts in 30 minutes.',
+        scheduledDate: notificationTime,
+      );
+    } else if (scheduledDate.isAfter(DateTime.now())) {
+      // If less than 30 mins away but still in future, notify now
+      await _notifications.scheduleNotification(
+        id: scheduledDate.millisecondsSinceEpoch ~/ 1000,
+        title: 'Upcoming Appointment',
+        body: 'Your appointment "${appointment.title}" is starting soon!',
+        scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
+      );
+    }
+
     return docRef.id;
   }
 

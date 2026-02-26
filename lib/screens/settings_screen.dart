@@ -23,7 +23,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _medicationReminders = true;
   bool _appointmentReminders = true;
-  bool _biometricAuth = false;
 
   String _languageLabel(String code) {
     switch (code) {
@@ -363,20 +362,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
             );
           },
-        ),
-        _buildSettingTile(
-          icon: Icons.fingerprint,
-          title: 'Biometric Authentication',
-          subtitle: 'Use fingerprint or face ID',
-          trailing: Switch(
-            value: _biometricAuth,
-            onChanged: (value) {
-              setState(() {
-                _biometricAuth = value;
-              });
-            },
-            activeThumbColor: AppColors.primaryColor,
-          ),
         ),
         const Divider(height: 30),
         _buildSectionHeader('Notifications'),

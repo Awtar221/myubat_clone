@@ -8,6 +8,7 @@ class TodayIntakeItem {
     required this.dosageText,
     required this.scheduledAt,
     required this.taken,
+    this.instructions,
     this.takenAt,
   });
 
@@ -17,5 +18,6 @@ class TodayIntakeItem {
   final String dosageText;
   final Timestamp scheduledAt;
   final bool taken;
+  final String? instructions;
   final Timestamp? takenAt;
 }

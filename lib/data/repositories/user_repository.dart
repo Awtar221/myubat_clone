@@ -46,6 +46,13 @@ class UserRepository {
     return AppUser.fromMap(normalized);
   }
 
+  Future<void> updateProfile(AppUser user) async {
+    final payload = user.toMapForUpdate()
+      ..[fields.updatedAt] = FieldValue.serverTimestamp();
+    
+    await _userDocRef(user.uid).set(payload, SetOptions(merge: true));
+  }
+
   Future<void> completeProfile(String uid, String displayName) async {
     await completeFullProfile(
       uid,

@@ -15,21 +15,46 @@ dependencies:
 
   # UI & Icons
   cupertino_icons: ^1.0.6
-  firebase_core: ^3.0.0
-  firebase_auth: ^5.0.0
+  firebase_core: ^3.10.0
+  firebase_auth: ^5.1.0
   cloud_firestore: ^5.0.0
   google_generative_ai: ^0.4.6
+  
+  # New Dependencies for Map, Location, and Wait Time Features
+  google_maps_flutter: ^2.6.1
+  geolocator: ^11.0.0
+  http: ^1.2.1
+  url_launcher: ^6.2.5
+  
+  # AI Scanner Dependencies
+  image_picker: ^1.0.7
+  
+  # Biometrics & Localization
+  local_auth: ^2.3.0
+  shared_preferences: ^2.3.2
+  flutter_localization: ^0.2.2
+  rxdart: ^0.28.0
+
+  # Notifications
+  flutter_local_notifications: ^17.1.2
+  timezone: ^0.9.2
+
+  # Markdown rendering for Chat
+  flutter_markdown: ^0.7.3+1
+
+  # Voice Input
+  speech_to_text: ^7.0.0
+
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
-  flutter_lints: ^6.0.0
+  flutter_lints: ^3.0.0
 
 flutter:
+  generate: true
   uses-material-design: true
 
-  assets:
-    - assets/images/
-    - assets/icons/
+

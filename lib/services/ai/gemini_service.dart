@@ -3,87 +3,77 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../data/models/chat_message.dart';
 
 class GeminiService {
-  static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const String _apiKey = 'AIzaSyCwglzJSSfiHPQA-ZVMiiXq7DvpXB-xnU0';
+  
   static const String _primaryModel = 'gemini-2.5-flash';
-  static const String _fallbackModel = 'gemini-pro';
+  
   static const String _systemInstruction =
-      "You are MyUbatPlus AI assistant. Only use the provided UserContext for factual info like appointments and medications. If not present, say you don't have enough info. Be concise. No medical diagnosis. For emergencies advise contacting a doctor.";
+      "You are MyUbatPlus AI health assistant. You help users manage their medications, appointments, and general health queries. "
+      "You can analyze symptoms and images (like rashes or wounds). "
+      "CRITICAL: Always start with a medical disclaimer. "
+      "If symptoms seem urgent (severe pain, difficulty breathing, heavy bleeding), advise immediate emergency care. "
+      "When appropriate, suggest the user visit a doctor or use the 'Find Hospital' feature in the app. "
+      "Be empathetic, concise, and professional.";
 
   Future<String> generateReply({
     required String userText,
     required String userContext,
     required List<ChatMessage> recentMessages,
+    Uint8List? imageBytes,
   }) async {
     final apiKey = _apiKey.trim();
-    if (apiKey.isEmpty) {
-      throw StateError('GEMINI_API_KEY is missing.');
-    }
+    if (apiKey.isEmpty) throw StateError('API Key missing');
 
-    final history = recentMessages.length <= 10
-        ? recentMessages
-        : recentMessages.sublist(recentMessages.length - 10);
-    final historyText = history
-        .map(
-          (m) =>
-              '${m.role == 'assistant' ? 'assistant' : 'user'}: ${m.content}',
-        )
-        .join('\n');
-
-    final prompt = StringBuffer()
-      ..writeln('UserContext:')
-      ..writeln(userContext)
-      ..writeln()
-      ..writeln('RecentHistory:')
-      ..writeln(historyText.isEmpty ? '(empty)' : historyText)
-      ..writeln()
-      ..writeln('CurrentUserMessage:')
-      ..writeln(userText);
-
-    final promptText = prompt.toString();
-    String usedModel = _primaryModel;
-    GenerateContentResponse response;
-
-    try {
-      response = await _generateWithModel(
-        modelName: _primaryModel,
-        apiKey: apiKey,
-        prompt: promptText,
-      );
-    } catch (error) {
-      if (!_isModelNotFoundError(error)) {
-        rethrow;
-      }
-      response = await _generateWithModel(
-        modelName: _fallbackModel,
-        apiKey: apiKey,
-        prompt: promptText,
-      );
-      usedModel = _fallbackModel;
-    }
-
-    final text = response.text?.trim() ?? '';
-    if (text.isEmpty) {
-      throw StateError('Gemini returned empty response.');
-    }
-    debugPrint('Gemini model used: $usedModel');
-    return text;
-  }
-
-  Future<GenerateContentResponse> _generateWithModel({
-    required String modelName,
-    required String apiKey,
-    required String prompt,
-  }) {
     final model = GenerativeModel(
-      model: modelName,
+      model: _primaryModel,
       apiKey: apiKey,
       systemInstruction: Content.system(_systemInstruction),
     );
-    return model.generateContent(<Content>[Content.text(prompt)]);
+
+    final history = recentMessages.take(10).map((m) {
+      return m.role == 'user' 
+          ? Content.text('User: ${m.content}') 
+          : Content.model([TextPart('Assistant: ${m.content}')]);
+    }).toList();
+
+    final promptParts = [
+      TextPart('User Context: $userContext\n\nUser Question: $userText'),
+      if (imageBytes != null) DataPart('image/jpeg', imageBytes),
+    ];
+
+    try {
+      final response = await model.generateContent([
+        ...history,
+        Content.multi(promptParts),
+      ]);
+      return response.text?.trim() ?? 'I apologize, I could not process that request.';
+    } catch (e) {
+      debugPrint('Gemini Error: $e');
+      return 'Sorry, I am having trouble connecting. Please try again later.';
+    }
   }
 
-  bool _isModelNotFoundError(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('404') || message.contains('not found');
+  Future<Map<String, String>> scanMedication(Uint8List imageBytes) async {
+    final model = GenerativeModel(model: _primaryModel, apiKey: _apiKey);
+    const prompt = 'Extract Medication Name, Dosage, and Instructions from this label. Format as Name: [val], Dosage: [val], Instructions: [val].';
+    
+    try {
+      final response = await model.generateContent([
+        Content.multi([TextPart(prompt), DataPart('image/jpeg', imageBytes)])
+      ]);
+      return _parseMedicationData(response.text ?? '');
+    } catch (e) {
+      return {'error': 'Failed to scan label'};
+    }
+  }
+
+  Map<String, String> _parseMedicationData(String text) {
+    final Map<String, String> data = {};
+    for (var line in text.split('\n')) {
+      if (line.contains('Name:')) data['name'] = line.split(':').last.trim();
+      if (line.contains('Dosage:')) data['dosage'] = line.split(':').last.trim();
+      if (line.contains('Instructions:')) data['instructions'] = line.split(':').last.trim();
+    }
+    return data;
   }
 }

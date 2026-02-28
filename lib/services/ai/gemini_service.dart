@@ -3,7 +3,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../data/models/chat_message.dart';
 
 class GeminiService {
-  static const String _apiKey = '';
+  static const String _apiKey = 'AIzaSyCwglzJSSfiHPQA-ZVMiiXq7DvpXB-xnU0';
   
   static const String _primaryModel = 'gemini-2.5-flash';
   

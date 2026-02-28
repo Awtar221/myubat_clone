@@ -1,51 +1,73 @@
-# MySejahtera Clone App
+# MyUbatPlus 🏥
 
-A Flutter-based clone of the MySejahtera application with health tracking, COVID-19 features, vaccination records, and check-in functionality.
+MyUbatPlus is a modern, AI-powered health assistant application built with Flutter. It helps users manage their medications, track appointments, and find nearby healthcare facilities with real-time insights.
 
-## ✨ Features
+## ✨ Key Features
 
-- ✅ **Home Dashboard** - Health status overview with QR code
-- ✅ **Health Tracking** - Log daily temperature and symptoms
-- ✅ **Check-In System** - Simulated QR code scanning and location tracking
-- ✅ **Vaccination Records** - Complete vaccination history with digital certificate
-- ✅ **Profile Management** - User information and settings
-- ✅ **No Backend Required** - All data stored locally using Provider
+### 🤖 AI Health Assistant
+- **Gemini-Powered Chatbot**: Get answers to health queries and symptom analysis using Google's Gemini 2.5 Flash.
+- **AI Medication Scanner**: Scan medicine labels using your camera to automatically extract medication names, dosages, and instructions.
+- **Voice Support**: Integrated speech-to-text for hands-free interaction with the AI assistant.
 
-## 🎨 Key Technologies
+### 💊 Medication Tracker
+- **Smart Reminders**: Set up schedules for your medications and receive local notifications when it's time to take them.
+- **Daily Intake Log**: Track your daily progress and mark doses as taken.
+- **History Tracking**: Keep a record of your past and current prescriptions.
 
-- **Flutter SDK** ≥ 3.0.0
-- **Provider** - State management
-- **QR Flutter** - QR code generation
-- **Google Fonts** - Custom typography
-- **Intl** - Date formatting
+### 🏥 Hospital Finder & Map
+- **Nearby Facilities**: Locate hospitals and clinics on an interactive Google Map.
+- **Busyness Score**: A unique algorithm that estimates how busy a facility is based on the day, peak hours, facility type, and user ratings.
+- **Navigation**: One-tap navigation to any selected healthcare provider.
 
-## 📱 Screens Overview
+### 🗓️ Health Management
+- **Appointment Booking**: Manage your medical appointments with date and time pickers.
+- **Secure Profile**: Firebase-backed authentication with optional Biometric (Fingerprint/FaceID) login.
 
-1. **Home** - Main dashboard with health status card, personal QR code, quick actions, and COVID-19 statistics
-2. **Health Status** - Daily health assessments, temperature records list, test results
-3. **Check-In** - QR scanner interface and check-in history
-4. **Vaccination** - Vaccination status, dose records, and digital certificate
-5. **Profile** - Personal information and app settings
+## 🛠️ Tech Stack
 
-## 🔧 Notes
+- **Framework**: [Flutter](https://flutter.dev) (Dart)
+- **Backend**: [Firebase](https://firebase.google.com) (Auth, Firestore)
+- **AI**: [Google Generative AI](https://ai.google.dev) (Gemini API)
+- **Maps**: [Google Maps SDK for Flutter](https://pub.dev/packages/google_maps_flutter)
+- **State Management**: Provider / RxDart
+- **Local Storage**: SharedPreferences
 
-- The app uses simulated data (no backend connection)
-- QR code scanning is simulated with predefined locations
-- All health records are stored in memory (reset on app restart)
-- To persist data, implement SharedPreferences storage
+## ⚙️ How It Works
 
-## 📝 Future Enhancements
+### Smart Busyness Algorithm
+The app calculates the "Busyness" of a hospital by scoring several factors:
+- **Peak Hours**: 8 AM - 11 AM (+4) and 6 PM - 9 PM (+3).
+- **Day Factor**: Mondays (+2) and Weekends (+1).
+- **Facility Type**: Hospitals are weighted higher (+3) than clinics.
+- **Rating Proxy**: High user ratings act as a proxy for popularity/volume.
 
-- Implement persistent storage with SharedPreferences
-- Add real QR code scanning functionality
-- Implement push notifications
-- Add multi-language support
-- Integrate with real backend API
-- Implement 3 AI features within the application
-  - AI risk assessment
-  - AI Chatbot
-  - Smart Appointments 
+### AI Label Scanning
+Using the camera, the app captures medication labels and sends them to Gemini. The AI identifies key entities and returns structured data (Name, Dosage, Instructions) which is then used to pre-fill the medication entry form.
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Flutter SDK (latest stable version)
+- A Google Maps API Key
+- A Gemini AI API Key
+- A Firebase Project
+
+### Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-repo/myubat_clone.git
+   ```
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Configure API Keys:
+   - Add your Gemini API key in `lib/services/ai/gemini_service.dart`.
+   - Add your Google Maps API key to the Android and iOS manifests.
+4. Run the app:
+   ```bash
+   flutter run
+   ```
 
 ## 📄 License
-
-This is a learning project and demo application.
+This project is for educational purposes.

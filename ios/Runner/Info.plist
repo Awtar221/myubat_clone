@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mysejahtera Clone</string>
+	<string>MyUbat</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>mysejahtera_clone</string>
+	<string>myubat_clone</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -45,5 +45,26 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to show nearby hospitals.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location to provide hospital proximity alerts.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to scan medication labels.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone for voice input in chatbot.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to photo library to upload medication label photos.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>This app uses Face ID for secure authentication.</string>
+
+	<!-- Local Notifications -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

@@ -8,6 +8,7 @@ import '../data/repositories/settings_repository.dart';
 import '../services/notification/notification_service.dart';
 import 'change_password_screen.dart';
 import 'edit_profile_screen.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -220,6 +221,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: _scheduleScaledReminders,
                 ),
               ],
+              const Divider(),
+              _buildSettingTile(
+                icon: Icons.logout,
+                title: 'Logout',
+                subtitle: 'Sign out from your account',
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+              ),
             ],
           );
         },

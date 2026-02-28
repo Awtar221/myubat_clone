@@ -305,32 +305,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
             ),
 
-            const SizedBox(height: 30),
-
-            // Test Info
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info, size: 20, color: Colors.blue[700]),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Test current password: admin123',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             const SizedBox(height: 20),
 

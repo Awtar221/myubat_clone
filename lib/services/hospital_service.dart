@@ -1,22 +1,26 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../data/models/hospital.dart';
 
 class HospitalService {
-  // Using the API key found in AndroidManifest.xml
-  final String _apiKey = 'AIzaSyB1D4z4EVAUVWiLJ5PYqESu_w6r4e226ww';
-
   Future<List<Hospital>> getNearestHospitals(LatLng userLocation) async {
+    final apiKey = AppConfig.googleMapsApiKey.trim();
+    if (apiKey.isEmpty) {
+      debugPrint(AppConfig.missingGoogleMapsApiKeyMessage);
+      return [];
+    }
+
     // Search for hospitals, clinics, and doctor offices
     final String url =
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?'
         'location=${userLocation.latitude},${userLocation.longitude}'
         '&radius=10000'
         '&type=hospital|clinic|doctor|health'
-        '&key=$_apiKey';
+        '&key=$apiKey';
 
     try {
       final response = await http.get(Uri.parse(url));

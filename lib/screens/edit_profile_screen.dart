@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 import '../core/firestore/firestore_fields.dart' as fields;
 import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,24 +16,29 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  static const List<String> _genderOptions = <String>[
+    'male',
+    'female',
+    'other',
+  ];
+
   final _formKey = GlobalKey<FormState>();
   final _userRepository = UserRepository();
-  
-  // Model
+
   AppUser? _user;
 
-  // Controllers
-  late TextEditingController _nameController;
-  late TextEditingController _phoneController;
-  late TextEditingController _dobController;
-  late TextEditingController _addressController;
-  late TextEditingController _bloodTypeController;
-  late TextEditingController _weightController;
-  late TextEditingController _heightController;
-  late TextEditingController _allergiesController;
-  late TextEditingController _conditionsController;
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _dobController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _bloodTypeController;
+  late final TextEditingController _weightController;
+  late final TextEditingController _heightController;
+  late final TextEditingController _allergiesController;
+  late final TextEditingController _conditionsController;
 
-  String _selectedGender = 'Male';
+  String _selectedGender = 'male';
   bool _isSaving = false;
   bool _isLoading = true;
   DateTime? _selectedDate;
@@ -40,6 +47,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _emailController = TextEditingController();
     _phoneController = TextEditingController();
     _dobController = TextEditingController();
     _addressController = TextEditingController();
@@ -53,43 +61,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      return;
+    }
 
     final profile = await _userRepository.getUserProfile(user.uid);
-    if (profile != null && mounted) {
-      setState(() {
-        _user = profile;
-        _nameController.text = _user!.displayName;
-        
-        final personal = _user!.personal ?? {};
-        _phoneController.text = personal[fields.phoneNumber] ?? '';
-        _addressController.text = personal[fields.address] ?? '';
-        _selectedGender = personal[fields.gender] ?? 'Male';
-        
-        if (personal[fields.dateOfBirth] != null) {
-          _selectedDate = (personal[fields.dateOfBirth] as Timestamp).toDate();
-          _dobController.text = _formatDate(_selectedDate!);
-        }
-
-        final health = _user!.health ?? {};
-        _bloodTypeController.text = health[fields.bloodType] ?? '';
-        _weightController.text = (health[fields.weightKg] ?? '').toString();
-        _heightController.text = (health[fields.heightCm] ?? '').toString();
-        _allergiesController.text = health[fields.allergies] ?? '';
-        _conditionsController.text = health[fields.medicalConditions] ?? '';
-        
-        _isLoading = false;
-      });
+    if (profile == null || !mounted) {
+      return;
     }
+
+    final personal = profile.personal ?? <String, dynamic>{};
+    final health = profile.health ?? <String, dynamic>{};
+
+    setState(() {
+      _user = profile;
+      _nameController.text = profile.displayName;
+      _emailController.text = profile.email;
+      _phoneController.text = personal[fields.phoneNumber] ?? '';
+      _addressController.text = personal[fields.address] ?? '';
+      _selectedGender = _normalizeGender(personal[fields.gender]);
+
+      final dateOfBirth = personal[fields.dateOfBirth];
+      if (dateOfBirth is Timestamp) {
+        _selectedDate = dateOfBirth.toDate();
+        _dobController.text = _formatDate(_selectedDate!);
+      }
+
+      _bloodTypeController.text = health[fields.bloodType] ?? '';
+      _weightController.text = (health[fields.weightKg] ?? '').toString();
+      _heightController.text = (health[fields.heightCm] ?? '').toString();
+      _allergiesController.text = health[fields.allergies] ?? '';
+      _conditionsController.text = health[fields.medicalConditions] ?? '';
+      _isLoading = false;
+    });
+  }
+
+  String _normalizeGender(dynamic value) {
+    final gender = value?.toString().trim().toLowerCase() ?? '';
+    if (_genderOptions.contains(gender)) {
+      return gender;
+    }
+    return 'male';
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day} ${_getMonthName(date.month)} ${date.year}';
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
     _addressController.dispose();
@@ -102,12 +127,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate() || _user == null) return;
+    if (!_formKey.currentState!.validate() || _user == null) {
+      return;
+    }
 
     setState(() => _isSaving = true);
 
     try {
-      // Use the AppUser model to bundle updates
       final updatedUser = AppUser(
         uid: _user!.uid,
         email: _user!.email,
@@ -118,7 +144,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           fields.phoneNumber: _phoneController.text.trim(),
           fields.address: _addressController.text.trim(),
           fields.gender: _selectedGender,
-          fields.dateOfBirth: _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
+          fields.dateOfBirth:
+              _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
         },
         health: {
           fields.bloodType: _bloodTypeController.text.trim(),
@@ -133,49 +160,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       await _userRepository.updateProfile(updatedUser);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: AppColors.success),
-        );
-        Navigator.pop(context);
+      if (!mounted) {
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.strings.text('profileUpdated')),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update profile'), backgroundColor: AppColors.error),
-        );
+      if (!mounted) {
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.strings.text('profileUpdateFailed')),
+          backgroundColor: AppColors.error,
+        ),
+      );
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final strings = context.strings;
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title: Text(strings.text('editProfile'))),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildSectionHeader('Personal Information'),
-            _buildTextField(controller: _nameController, label: 'Full Name', icon: Icons.person_outline, validator: (v) => v!.isEmpty ? 'Enter name' : null),
-            _buildTextField(controller: TextEditingController(text: _user?.email), label: 'Email', icon: Icons.email_outlined, readOnly: true),
-            _buildTextField(controller: _phoneController, label: 'Phone Number', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+            _buildSectionHeader(strings.text('personalInformation')),
+            _buildTextField(
+              controller: _nameController,
+              label: strings.text('fullName'),
+              icon: Icons.person_outline,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return strings.text('enterName');
+                }
+                return null;
+              },
+            ),
+            _buildTextField(
+              controller: _emailController,
+              label: strings.text('email'),
+              icon: Icons.email_outlined,
+              readOnly: true,
+            ),
+            _buildTextField(
+              controller: _phoneController,
+              label: strings.text('phoneNumber'),
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+            ),
             _buildTextField(
               controller: _dobController,
-              label: 'Date of Birth',
+              label: strings.text('dateOfBirth'),
               icon: Icons.calendar_today_outlined,
               readOnly: true,
               onTap: () async {
                 final date = await showDatePicker(
-                  context: context, 
-                  initialDate: _selectedDate ?? DateTime(1990), 
-                  firstDate: DateTime(1900), 
-                  lastDate: DateTime.now()
+                  context: context,
+                  initialDate: _selectedDate ?? DateTime(1990),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime.now(),
                 );
                 if (date != null) {
                   setState(() {
@@ -185,26 +250,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 }
               },
             ),
-            _buildGenderDropdown(),
-            _buildTextField(controller: _addressController, label: 'Address', icon: Icons.location_on_outlined, maxLines: 2),
+            _buildGenderDropdown(strings),
+            _buildTextField(
+              controller: _addressController,
+              label: strings.text('address'),
+              icon: Icons.location_on_outlined,
+              maxLines: 2,
+            ),
             const SizedBox(height: 20),
-            _buildSectionHeader('Health Information'),
-            _buildTextField(controller: _bloodTypeController, label: 'Blood Type', icon: Icons.bloodtype_outlined),
+            _buildSectionHeader(strings.text('healthInformation')),
+            _buildTextField(
+              controller: _bloodTypeController,
+              label: strings.text('bloodType'),
+              icon: Icons.bloodtype_outlined,
+            ),
             Row(
               children: [
-                Expanded(child: _buildTextField(controller: _weightController, label: 'Weight (kg)', icon: Icons.monitor_weight_outlined, keyboardType: TextInputType.number)),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _weightController,
+                    label: strings.text('weightKg'),
+                    icon: Icons.monitor_weight_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildTextField(controller: _heightController, label: 'Height (cm)', icon: Icons.height_outlined, keyboardType: TextInputType.number)),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _heightController,
+                    label: strings.text('heightCm'),
+                    icon: Icons.height_outlined,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
               ],
             ),
-            _buildTextField(controller: _allergiesController, label: 'Allergies', icon: Icons.warning_amber_outlined, maxLines: 2),
-            _buildTextField(controller: _conditionsController, label: 'Medical Conditions', icon: Icons.medical_information_outlined, maxLines: 2),
+            _buildTextField(
+              controller: _allergiesController,
+              label: strings.text('allergies'),
+              icon: Icons.warning_amber_outlined,
+              maxLines: 2,
+            ),
+            _buildTextField(
+              controller: _conditionsController,
+              label: strings.text('medicalConditions'),
+              icon: Icons.medical_information_outlined,
+              maxLines: 2,
+            ),
             const SizedBox(height: 30),
             SizedBox(
               height: 56,
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _saveProfile,
-                child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Save Changes'),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(strings.text('saveChanges')),
               ),
             ),
           ],
@@ -214,10 +314,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor)));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primaryColor,
+        ),
+      ),
+    );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String label, required IconData icon, TextInputType? keyboardType, bool readOnly = false, int maxLines = 1, VoidCallback? onTap, String? Function(String?)? validator}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    bool readOnly = false,
+    int maxLines = 1,
+    VoidCallback? onTap,
+    String? Function(String?)? validator,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -230,26 +349,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildGenderDropdown() {
+  Widget _buildGenderDropdown(AppStrings strings) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
         initialValue: _selectedGender,
-        decoration: InputDecoration(labelText: 'Gender', prefixIcon: const Icon(Icons.wc_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        items: ['Male', 'Female', 'Other'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-        onChanged: (v) => setState(() => _selectedGender = v!),
+        decoration: InputDecoration(
+          labelText: strings.text('gender'),
+          prefixIcon: const Icon(Icons.wc_outlined),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        items: _genderOptions
+            .map(
+              (value) => DropdownMenuItem<String>(
+                value: value,
+                child: Text(strings.genderLabel(value)),
+              ),
+            )
+            .toList(growable: false),
+        onChanged: (value) {
+          if (value == null) {
+            return;
+          }
+          setState(() => _selectedGender = value);
+        },
       ),
     );
-  }
-
-  String _getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
   }
 }

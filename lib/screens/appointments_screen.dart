@@ -4,9 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import '../constants/app_colors.dart';
 import '../data/models/appointment.dart';
 import '../data/repositories/appointment_repository.dart';
+import '../l10n/app_strings.dart';
 import '../services/notification/notification_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
@@ -21,7 +23,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   late final TabController _tabController =
       TabController(length: 2, vsync: this);
   final AppointmentRepository _appointmentRepository = AppointmentRepository();
-  final String _googleMapsApiKey = 'AIzaSyB1D4z4EVAUVWiLJ5PYqESu_w6r4e226ww';
   Timer? _debounce;
 
   @override
@@ -54,9 +55,16 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     if (input.isEmpty) {
       return [];
     }
+
+    final apiKey = AppConfig.googleMapsApiKey.trim();
+    if (apiKey.isEmpty) {
+      debugPrint(AppConfig.missingGoogleMapsApiKeyMessage);
+      return [];
+    }
+
     try {
       final url =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_googleMapsApiKey';
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$apiKey';
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -70,6 +78,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
   Future<void> _showBookAppointmentDialog(
       {Appointment? existingAppointment}) async {
+    final strings = context.strings;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return;
@@ -120,26 +129,26 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                       const SizedBox(height: 20),
                       Text(
                           existingAppointment == null
-                              ? 'Add Appointment'
-                              : 'Edit Appointment',
+                              ? strings.text('addAppointment')
+                              : strings.text('editAppointment'),
                           style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 24),
                       _buildTextField(
                           controller: titleController,
-                          label: 'Appointment Title',
+                          label: strings.text('appointmentTitle'),
                           icon: Icons.event_note_outlined),
                       const SizedBox(height: 16),
                       _buildTextField(
                           controller: doctorController,
-                          label: 'Doctor Name',
+                          label: strings.text('doctorName'),
                           icon: Icons.person_outline),
                       const SizedBox(height: 16),
                       TextField(
                         controller: locationController,
                         textCapitalization: TextCapitalization.words,
                         decoration: InputDecoration(
-                          labelText: 'Location',
+                          labelText: strings.text('location'),
                           prefixIcon: const Icon(Icons.location_on_outlined,
                               color: AppColors.appointmentColor, size: 22),
                           suffixIcon: const Icon(Icons.search, size: 20),
@@ -342,9 +351,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                       !selectedDateTime!
                                           .isAfter(DateTime.now())) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'Saved. Appointment time is in the past, so no reminder was scheduled.',
+                                          strings.text(
+                                            'savedPastAppointmentReminder',
+                                          ),
                                         ),
                                         behavior: SnackBarBehavior.floating,
                                       ),
@@ -366,8 +377,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                       color: Colors.white, strokeWidth: 2))
                               : Text(
                                   existingAppointment == null
-                                      ? 'Add Appointment'
-                                      : 'Update Appointment',
+                                      ? strings.text('addAppointment')
+                                      : strings.text('editAppointment'),
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -461,12 +472,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(body: Center(child: Text('Sign in.')));
+      return Scaffold(
+          body: Center(child: Text(context.strings.text('signIn'))));
     }
 
+    final strings = context.strings;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Schedule'),
+        title: Text(strings.text('mySchedule')),
         backgroundColor: AppColors.appointmentColor,
         elevation: 0,
         bottom: TabBar(
@@ -474,7 +487,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          tabs: const [Tab(text: 'Upcoming'), Tab(text: 'Past')],
+          tabs: [
+            Tab(text: strings.text('upcoming')),
+            Tab(text: strings.text('past')),
+          ],
         ),
       ),
       body: Container(
@@ -495,18 +511,20 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
             return TabBarView(
               controller: _tabController,
               children: [
-                _buildList(upcoming, 'No upcoming appointments'),
-                _buildList(past, 'No past appointments'),
+                _buildList(upcoming, strings.text('noUpcomingAppointments')),
+                _buildList(past, strings.text('noPastAppointments')),
               ],
             );
           },
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'appointments_fab',
         onPressed: _showBookAppointmentDialog,
         backgroundColor: AppColors.appointmentColor,
-        label: const Text('Add Appointment',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(strings.text('addAppointment'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         icon: const Icon(Icons.add, color: Colors.white),
       ),
     );

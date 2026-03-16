@@ -214,6 +214,11 @@ class NotificationService {
     await _cancelByType(eventId: eventId, type: type);
   }
 
+  Future<void> cancelAllNotifications() async {
+    await init();
+    await _plugin.cancelAll();
+  }
+
   void _cachePendingPayload(String? payload) {
     if (payload == null || payload.isEmpty) {
       return;

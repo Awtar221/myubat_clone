@@ -1,19 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
-import '../data/models/appointment.dart';
 import '../data/models/app_user.dart';
+import '../data/models/appointment.dart';
 import '../data/models/today_intake_item.dart';
 import '../data/repositories/appointment_repository.dart';
 import '../data/repositories/medication_repository.dart';
 import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
 import '../widgets/feature_card.dart';
 import '../widgets/quick_stats_card.dart';
+import 'appointments_screen.dart';
 import 'chatbot_screen.dart';
 import 'hospital_map_screen.dart';
 import 'medication_tracker_screen.dart';
-import 'appointments_screen.dart';
 import 'profile_screen.dart';
 import 'profile_setup_screen.dart';
 
@@ -27,14 +29,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   bool _didRunProfileGate = false;
+  late final List<Widget> _screens;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
-
-  late final List<Widget> _screens;
 
   @override
   void initState() {
@@ -51,18 +52,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _runProfileGateFallback() async {
-    if (!mounted || _didRunProfileGate) return;
+    if (!mounted || _didRunProfileGate) {
+      return;
+    }
     _didRunProfileGate = true;
 
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      return;
+    }
 
     final repository = UserRepository();
     try {
       final profile = await repository.getUserProfile(user.uid);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      if (profile?.profileCompleted == true) return;
+      if (profile?.profileCompleted == true) {
+        return;
+      }
 
       final email = (user.email ?? '').trim();
       final fallbackDisplayName =
@@ -72,10 +81,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (profile == null) {
         await repository.createUserProfile(
-            user.uid, email, fallbackDisplayName);
+          user.uid,
+          email,
+          fallbackDisplayName,
+        );
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) =>
@@ -89,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: IndexedStack(
@@ -114,23 +131,27 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
+          items: [
             BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'Home'),
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: strings.text('home'),
+            ),
             BottomNavigationBarItem(
-                icon: Icon(Icons.medication_outlined),
-                activeIcon: Icon(Icons.medication),
-                label: 'Meds'),
+              icon: const Icon(Icons.medication_outlined),
+              activeIcon: const Icon(Icons.medication),
+              label: strings.text('meds'),
+            ),
             BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today_outlined),
-                activeIcon: Icon(Icons.calendar_today),
-                label: 'Schedule'),
+              icon: const Icon(Icons.calendar_today_outlined),
+              activeIcon: const Icon(Icons.calendar_today),
+              label: strings.text('schedule'),
+            ),
             BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Profile'),
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: strings.text('profile'),
+            ),
           ],
         ),
       ),
@@ -139,8 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatefulWidget {
-  final Function(int) onNavigateToTab;
   const HomeContent({super.key, required this.onNavigateToTab});
+
+  final Function(int) onNavigateToTab;
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -170,6 +192,7 @@ class _HomeContentState extends State<HomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return CustomScrollView(
@@ -185,21 +208,21 @@ class _HomeContentState extends State<HomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildWelcomeHeader(uid),
+                _buildWelcomeHeader(uid, strings),
                 const SizedBox(height: 25),
                 Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => widget.onNavigateToTab(1), // Meds tab
-                        child: _buildAdherenceCard(uid),
+                        onTap: () => widget.onNavigateToTab(1),
+                        child: _buildAdherenceCard(uid, strings),
                       ),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => widget.onNavigateToTab(2), // Schedule tab
-                        child: _buildNextApptCard(uid),
+                        onTap: () => widget.onNavigateToTab(2),
+                        child: _buildNextApptCard(uid, strings),
                       ),
                     ),
                   ],
@@ -214,32 +237,46 @@ class _HomeContentState extends State<HomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Quick Actions',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  strings.text('quickActions'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                _buildGridActions(),
+                _buildGridActions(strings),
                 const SizedBox(height: 30),
-                const Text('Today\'s Appointments',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  strings.text('todaysAppointments'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 12),
               ],
             ),
           ),
         ),
-        _buildTodayAppointmentsSliver(uid),
+        _buildTodayAppointmentsSliver(uid, strings),
         const SliverToBoxAdapter(child: SizedBox(height: 30)),
       ],
     );
   }
 
-  Widget _buildWelcomeHeader(String? uid) {
+  Widget _buildWelcomeHeader(String? uid, AppStrings strings) {
     if (uid == null) {
-      return const Text('Welcome back!',
-          style: TextStyle(
-              color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold));
+      return Text(
+        strings.text('welcomeBack'),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      );
     }
+
     return StreamBuilder<AppUser?>(
       stream: _userRepository.userProfileStream(uid),
       builder: (context, snapshot) {
@@ -247,91 +284,115 @@ class _HomeContentState extends State<HomeContent> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Welcome back,',
-                style: TextStyle(color: Colors.white70, fontSize: 14)),
-            Text(name,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold)),
+            Text(
+              strings.text('welcomeBack'),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         );
       },
     );
   }
 
-  Widget _buildAdherenceCard(String? uid) {
+  Widget _buildAdherenceCard(String? uid, AppStrings strings) {
     if (uid == null) {
-      return const QuickStatsCard(
-          icon: Icons.medication,
-          title: 'Adherence',
-          value: '-',
-          subtitle: 'Sign in');
+      return QuickStatsCard(
+        icon: Icons.medication,
+        title: strings.text('adherence'),
+        value: '-',
+        subtitle: strings.text('signIn'),
+      );
     }
+
     return StreamBuilder<List<TodayIntakeItem>>(
       stream:
           _medicationRepository.todayIntakesStream(uid, _todayStart, _todayEnd),
       builder: (context, snapshot) {
         final list = snapshot.data ?? [];
-        final taken = list.where((i) => i.taken).length;
+        final taken = list.where((item) => item.taken).length;
         return QuickStatsCard(
-            icon: Icons.medication,
-            title: 'Adherence',
-            value: '$taken/${list.length}',
-            subtitle: 'View Meds');
+          icon: Icons.medication,
+          title: strings.text('adherence'),
+          value: '$taken/${list.length}',
+          subtitle: strings.text('viewMeds'),
+        );
       },
     );
   }
 
-  Widget _buildNextApptCard(String? uid) {
+  Widget _buildNextApptCard(String? uid, AppStrings strings) {
     if (uid == null) {
-      return const QuickStatsCard(
-          icon: Icons.calendar_today,
-          title: 'Next Appt',
-          value: '-',
-          subtitle: 'Sign in');
+      return QuickStatsCard(
+        icon: Icons.calendar_today,
+        title: strings.text('nextAppt'),
+        value: '-',
+        subtitle: strings.text('signIn'),
+      );
     }
+
     return StreamBuilder<Appointment?>(
       stream: _appointmentRepository.nextUpcomingAppointmentStream(uid),
       builder: (context, snapshot) {
-        final appt = snapshot.data;
+        final appointment = snapshot.data;
         return QuickStatsCard(
-            icon: Icons.calendar_today,
-            title: 'Next Appt',
-            value: appt != null ? _formatTime(appt.scheduledAt) : '--:--',
-            subtitle: appt != null ? 'View Schedule' : 'No Appts');
+          icon: Icons.calendar_today,
+          title: strings.text('nextAppt'),
+          value: appointment != null
+              ? _formatTime(appointment.scheduledAt)
+              : '--:--',
+          subtitle: appointment != null
+              ? strings.text('viewSchedule')
+              : strings.text('noAppts'),
+        );
       },
     );
   }
 
-  Widget _buildGridActions() {
+  Widget _buildGridActions(AppStrings strings) {
     return Row(
       children: [
         Expanded(
-            child: FeatureCard(
-          icon: Icons.smart_toy_outlined,
-          title: 'AI Assist',
-          subtitle: 'Medical Bot',
-          color: AppColors.chatbotColor,
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        )),
+          child: FeatureCard(
+            icon: Icons.smart_toy_outlined,
+            title: strings.text('aiAssist'),
+            subtitle: strings.text('medicalBot'),
+            color: AppColors.chatbotColor,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+            ),
+          ),
+        ),
         const SizedBox(width: 15),
         Expanded(
-            child: FeatureCard(
-          icon: Icons.map_outlined,
-          title: 'Hospitals',
-          subtitle: 'Find Nearest',
-          color: AppColors.mapColor,
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const HospitalMapScreen())),
-        )),
+          child: FeatureCard(
+            icon: Icons.map_outlined,
+            title: strings.text('hospitals'),
+            subtitle: strings.text('findNearest'),
+            color: AppColors.mapColor,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HospitalMapScreen()),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildTodayAppointmentsSliver(String? uid) {
-    if (uid == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+  Widget _buildTodayAppointmentsSliver(String? uid, AppStrings strings) {
+    if (uid == null) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
     return StreamBuilder<List<Appointment>>(
       stream: _appointmentRepository.listAppointmentsStream(uid),
       builder: (context, snapshot) {
@@ -339,19 +400,21 @@ class _HomeContentState extends State<HomeContent> {
         final startOfDay = DateTime(now.year, now.month, now.day);
         final endOfDay = startOfDay.add(const Duration(days: 1));
 
-        final todayAppts = (snapshot.data ?? [])
-            .where((a) =>
-                a.scheduledAt.toDate().isAfter(startOfDay) &&
-                a.scheduledAt.toDate().isBefore(endOfDay))
+        final todayAppointments = (snapshot.data ?? [])
+            .where((appointment) =>
+                appointment.scheduledAt.toDate().isAfter(startOfDay) &&
+                appointment.scheduledAt.toDate().isBefore(endOfDay))
             .toList();
 
-        if (todayAppts.isEmpty) {
-          return const SliverToBoxAdapter(
+        if (todayAppointments.isEmpty) {
+          return SliverToBoxAdapter(
             child: Center(
               child: Padding(
-                padding: EdgeInsets.all(40.0),
-                child: Text('No appointments scheduled for today.',
-                    style: TextStyle(color: Colors.grey)),
+                padding: const EdgeInsets.all(40.0),
+                child: Text(
+                  strings.text('noAppointmentsToday'),
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ),
             ),
           );
@@ -362,11 +425,12 @@ class _HomeContentState extends State<HomeContent> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final appt = todayAppts[index];
+                final appointment = todayAppointments[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                   color: Colors.white,
                   child: ListTile(
@@ -374,22 +438,31 @@ class _HomeContentState extends State<HomeContent> {
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                          color:
-                              AppColors.appointmentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.event,
-                          color: AppColors.appointmentColor),
+                        color:
+                            AppColors.appointmentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.event,
+                        color: AppColors.appointmentColor,
+                      ),
                     ),
-                    title: Text(appt.title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    title: Text(
+                      appointment.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     subtitle: Text(
-                        '${_formatTime(appt.scheduledAt)} • ${appt.locationText ?? 'Location not set'}'),
+                      '${_formatTime(appointment.scheduledAt)} - '
+                      '${appointment.locationText ?? strings.text('locationNotSet')}',
+                    ),
                     onTap: () => widget.onNavigateToTab(2),
                   ),
                 );
               },
-              childCount: todayAppts.length,
+              childCount: todayAppointments.length,
             ),
           ),
         );

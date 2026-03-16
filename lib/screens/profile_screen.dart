@@ -1,25 +1,104 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
 import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
+import '../services/account/account_service.dart';
 import 'edit_profile_screen.dart';
+import 'login_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  void _showSnackBar(BuildContext context, String message) {
+    if (!context.mounted) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) {
+        return;
+      }
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) {
+        return;
+      }
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.error,
+          ),
+        );
+    });
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final strings = context.strings;
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(strings.text('logoutQuestion')),
+        content: Text(strings.text('logoutDescription')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(strings.text('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(strings.text('logout')),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true || !context.mounted) {
+      return;
+    }
+
+    await Future<void>.delayed(Duration.zero);
+    if (!context.mounted) {
+      return;
+    }
+    await _handleLogout(context);
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await AccountService().signOut();
+      if (!context.mounted) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) {
+          return;
+        }
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (_) => false,
+        );
+      });
+    } catch (e) {
+      _showSnackBar(context, '${context.strings.text('unableToLogout')} $e');
+    }
+  }
 
   String _displayOrDash(dynamic value) {
     if (value == null) {
       return '-';
     }
     if (value is Timestamp) {
-      final d = value.toDate();
-      final y = d.year.toString().padLeft(4, '0');
-      final m = d.month.toString().padLeft(2, '0');
-      final day = d.day.toString().padLeft(2, '0');
-      return '$y-$m-$day';
+      final date = value.toDate();
+      final year = date.year.toString().padLeft(4, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final day = date.day.toString().padLeft(2, '0');
+      return '$year-$month-$day';
     }
     final text = value.toString().trim();
     return text.isEmpty ? '-' : text;
@@ -80,18 +159,20 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     final uid = FirebaseAuth.instance.currentUser?.uid;
+
     if (uid == null) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: Text('Please sign in to view profile.'),
+          child: Text(strings.text('pleaseSignInProfile')),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(strings.text('profile')),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -108,7 +189,7 @@ class ProfileScreen extends StatelessWidget {
         stream: UserRepository().userProfileStream(uid),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text('Unable to load profile.'));
+            return Center(child: Text(strings.text('unableLoadProfile')));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -117,7 +198,7 @@ class ProfileScreen extends StatelessWidget {
 
           final user = snapshot.data;
           if (user == null) {
-            return const Center(child: Text('Profile not found.'));
+            return Center(child: Text(strings.text('profileNotFound')));
           }
 
           final personal = user.personal ?? const <String, dynamic>{};
@@ -182,67 +263,71 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Personal Information'),
+                      _buildSectionTitle(strings.text('personalInformation')),
                       _buildInfoTile(
                         icon: Icons.badge_outlined,
-                        title: 'Full Name',
+                        title: strings.text('fullName'),
                         value: _displayOrDash(personal['fullName']),
                       ),
                       _buildInfoTile(
                         icon: Icons.calendar_today_outlined,
-                        title: 'Date of Birth',
+                        title: strings.text('dateOfBirth'),
                         value: _displayOrDash(personal['dateOfBirth']),
                       ),
                       _buildInfoTile(
                         icon: Icons.wc_outlined,
-                        title: 'Gender',
-                        value: _displayOrDash(personal['gender']),
+                        title: strings.text('gender'),
+                        value: personal['gender'] == null
+                            ? _displayOrDash(null)
+                            : strings.genderLabel(
+                                personal['gender'].toString(),
+                              ),
                       ),
                       _buildInfoTile(
                         icon: Icons.phone_outlined,
-                        title: 'Phone Number',
+                        title: strings.text('phoneNumber'),
                         value: _displayOrDash(personal['phoneNumber']),
                       ),
                       _buildInfoTile(
                         icon: Icons.location_on_outlined,
-                        title: 'Address',
+                        title: strings.text('address'),
                         value: _displayOrDash(personal['address']),
                       ),
-                      _buildSectionTitle('Health Information'),
+                      _buildSectionTitle(strings.text('healthInformation')),
                       _buildInfoTile(
                         icon: Icons.bloodtype_outlined,
-                        title: 'Blood Type',
+                        title: strings.text('bloodType'),
                         value: _displayOrDash(health['bloodType']),
                       ),
                       _buildInfoTile(
                         icon: Icons.height_outlined,
-                        title: 'Height',
+                        title: strings.text('height'),
                         value: '${_displayOrDash(health['heightCm'])} cm',
                       ),
                       _buildInfoTile(
                         icon: Icons.monitor_weight_outlined,
-                        title: 'Weight',
+                        title: strings.text('weight'),
                         value: '${_displayOrDash(health['weightKg'])} kg',
                       ),
                       _buildInfoTile(
                         icon: Icons.warning_amber_outlined,
-                        title: 'Allergies',
+                        title: strings.text('allergies'),
                         value: _displayOrDash(health['allergies']),
                       ),
                       _buildInfoTile(
                         icon: Icons.medical_information_outlined,
-                        title: 'Medical Conditions',
+                        title: strings.text('medicalConditions'),
                         value: _displayOrDash(health['medicalConditions']),
                       ),
-                      _buildSectionTitle('Emergency Contact'),
+                      _buildSectionTitle(strings.text('emergencyContact')),
                       _buildInfoTile(
                         icon: Icons.person_outline,
-                        title: 'Contact Name',
+                        title: strings.text('contactName'),
                         value: _displayOrDash(emergency['contactName']),
                       ),
                       _buildInfoTile(
                         icon: Icons.phone_in_talk_outlined,
-                        title: 'Contact Number',
+                        title: strings.text('contactNumber'),
                         value: _displayOrDash(emergency['contactNumber']),
                       ),
                       const SizedBox(height: 20),
@@ -258,7 +343,7 @@ class ProfileScreen extends StatelessWidget {
                             );
                           },
                           icon: const Icon(Icons.edit),
-                          label: const Text('Edit Profile'),
+                          label: Text(strings.text('editProfile')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -268,7 +353,30 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _confirmLogout(context),
+                          icon: const Icon(Icons.logout),
+                          label: Text(strings.text('logout')),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryColor,
+                            side: const BorderSide(
+                              color: AppColors.primaryColor,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: MediaQuery.of(context).padding.bottom +
+                            kBottomNavigationBarHeight +
+                            24,
+                      ),
                     ],
                   ),
                 ),

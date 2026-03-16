@@ -6,6 +6,7 @@ import '../constants/app_colors.dart';
 import '../data/models/medication.dart';
 import '../data/models/today_intake_item.dart';
 import '../data/repositories/medication_repository.dart';
+import '../l10n/app_strings.dart';
 import '../services/ai/gemini_service.dart';
 import '../services/notification/notification_service.dart';
 import '../widgets/medication_reminder_card.dart';
@@ -68,16 +69,16 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
+        builder: (context) => Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('AI Analyzing Label...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(context.strings.text('aiAnalyzingLabel')),
                 ],
               ),
             ),
@@ -469,16 +470,18 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(body: Center(child: Text('Please sign in.')));
+      return Scaffold(
+          body: Center(child: Text(context.strings.text('signIn'))));
     }
 
+    final strings = context.strings;
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = start.add(const Duration(days: 1));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Medications'),
+        title: Text(strings.text('myMedications')),
         backgroundColor: AppColors.medicationColor,
         elevation: 0,
         bottom: TabBar(
@@ -487,7 +490,10 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
           unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
           indicatorColor: Colors.white,
           indicatorWeight: 3,
-          tabs: const [Tab(text: 'Active'), Tab(text: 'Completed')],
+          tabs: [
+            Tab(text: strings.text('active')),
+            Tab(text: strings.text('completed')),
+          ],
         ),
       ),
       body: Container(
@@ -519,11 +525,13 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'medication_fab',
         onPressed: () => _showAddMedicationDialog(),
         backgroundColor: AppColors.medicationColor,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Medication',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(strings.text('addMedication'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -532,7 +540,10 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
       String uid, List<TodayIntakeItem> items, bool completedList) {
     if (items.isEmpty) {
       return Center(
-          child: Text(completedList ? 'No completed doses' : 'No active doses',
+          child: Text(
+              completedList
+                  ? context.strings.text('completedDoses')
+                  : context.strings.text('activeDoses'),
               style: const TextStyle(color: Colors.grey)));
     }
     return ListView.builder(

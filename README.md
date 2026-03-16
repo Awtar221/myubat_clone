@@ -62,11 +62,11 @@ Using the camera, the app captures medication labels and sends them to Gemini. T
    flutter pub get
    ```
 3. Configure API Keys:
-   - Add your Gemini API key in `lib/services/ai/gemini_service.dart`.
-   - Add your Google Maps API key to the Android and iOS manifests.
+   - Start the app with `--dart-define` values instead of hardcoding keys in source files.
+   - Use the same Google Maps key for both the Places API calls and the Android map manifest injection.
 4. Run the app:
    ```bash
-   flutter run
+   flutter run --dart-define=GEMINI_API_KEY=your_gemini_key --dart-define=GOOGLE_MAPS_API_KEY=your_google_maps_key
    ```
 
 ## 📄 License

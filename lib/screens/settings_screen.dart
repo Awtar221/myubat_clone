@@ -55,7 +55,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await _settingsRepository.updateSettings(uid, partial);
     } catch (e) {
-      _showSnackBar(context.strings.text('unableToSaveSettings'));
+      if (mounted) {
+        _showSnackBar(context.strings.text('unableToSaveSettings'));
+      }
     }
   }
 
@@ -75,10 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: 'en',
                 current: currentLanguage,
                 onSelect: (value) async {
+                  final appState = MedisenseApp.of(context);
                   Navigator.pop(dialogContext);
                   setState(() => _language = value);
                   await _saveSetting(uid, {fields.language: value});
-                  await MyUbatApp.of(context)?.setLocale(Locale(value));
+                  await appState?.setLocale(Locale(value));
                 },
               ),
               _buildLanguageOption(
@@ -86,10 +89,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: 'ms',
                 current: currentLanguage,
                 onSelect: (value) async {
+                  final appState = MedisenseApp.of(context);
                   Navigator.pop(dialogContext);
                   setState(() => _language = value);
                   await _saveSetting(uid, {fields.language: value});
-                  await MyUbatApp.of(context)?.setLocale(Locale(value));
+                  await appState?.setLocale(Locale(value));
                 },
               ),
               _buildLanguageOption(
@@ -97,10 +101,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: 'zh',
                 current: currentLanguage,
                 onSelect: (value) async {
+                  final appState = MedisenseApp.of(context);
                   Navigator.pop(dialogContext);
                   setState(() => _language = value);
                   await _saveSetting(uid, {fields.language: value});
-                  await MyUbatApp.of(context)?.setLocale(Locale(value));
+                  await appState?.setLocale(Locale(value));
                 },
               ),
             ],

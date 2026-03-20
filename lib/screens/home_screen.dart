@@ -439,12 +439,12 @@ class _HomeContentState extends State<HomeContent> {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color:
-                            AppColors.appointmentColor.withValues(alpha: 0.1),
+                            AppColors.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.event,
-                        color: AppColors.appointmentColor,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                     title: Text(

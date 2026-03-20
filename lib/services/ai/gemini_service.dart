@@ -100,7 +100,7 @@ class GeminiService {
         'Reply in English unless the user explicitly asks for another language.',
     };
 
-    return 'You are MyUbat AI health assistant. '
+    return 'You are Medisense AI health assistant. '
         'You help users manage medications, appointments, and general health questions. '
         'You can analyze symptoms and images such as rashes or wounds. '
         'Always start with a medical disclaimer. '

@@ -42,8 +42,8 @@ class NotificationService {
   static const String typeAppointment = 'appointment';
   static const String legacyTypeSchedule = 'schedule';
 
-  static const String _channelId = 'myubat_reminders';
-  static const String _channelName = 'MyUbat Reminders';
+  static const String _channelId = 'medisense_reminders';
+  static const String _channelName = 'Medisense Reminders';
   static const String _channelDescription =
       'Medication and appointment reminder notifications.';
   static const String exactAlarmPermissionHint =
@@ -350,7 +350,7 @@ class NotificationService {
         channelDescription: _channelDescription,
         importance: Importance.max,
         priority: Priority.high,
-        ticker: 'MyUbat Reminder',
+        ticker: 'Medisense Reminder',
         styleInformation: BigTextStyleInformation(body),
         category: AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,

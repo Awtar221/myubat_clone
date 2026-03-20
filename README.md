@@ -1,6 +1,6 @@
-# MyUbatPlus 🏥
+# Medisense 🏥
 
-MyUbatPlus is a modern, AI-powered health assistant application built with Flutter. It helps users manage their medications, track appointments, and find nearby healthcare facilities with real-time insights.
+Medisense is a modern, AI-powered health assistant application built with Flutter. It helps users manage their medications, track appointments, and find nearby healthcare facilities with real-time insights.
 
 ## ✨ Key Features
 
@@ -55,7 +55,7 @@ Using the camera, the app captures medication labels and sends them to Gemini. T
 ### Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repo/myubat_clone.git
+   git clone https://github.com/your-repo/medisense.git
    ```
 2. Install dependencies:
    ```bash

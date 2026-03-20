@@ -150,7 +150,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         decoration: InputDecoration(
                           labelText: strings.text('location'),
                           prefixIcon: const Icon(Icons.location_on_outlined,
-                              color: AppColors.appointmentColor, size: 22),
+                              color: AppColors.primaryColor, size: 22),
                           suffixIcon: const Icon(Icons.search, size: 20),
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -161,7 +161,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: const BorderSide(
-                                  color: AppColors.appointmentColor)),
+                                  color: AppColors.primaryColor)),
                           filled: true,
                           fillColor: Colors.grey[50],
                         ),
@@ -245,7 +245,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                             labelText: 'Date & Time',
                             prefixIcon: const Icon(
                                 Icons.calendar_today_outlined,
-                                color: AppColors.appointmentColor,
+                                color: AppColors.primaryColor,
                                 size: 22),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -275,7 +275,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         title: const Text('Reminders'),
                         subtitle: const Text('Reminds you 3h, 1h, 30m before'),
                         value: remindersEnabled,
-                        activeThumbColor: AppColors.appointmentColor,
+                        activeThumbColor: AppColors.primaryColor,
                         onChanged: (value) {
                           setModalState(() => remindersEnabled = value);
                         },
@@ -364,7 +364,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                                   Navigator.pop(context); // CLOSES DIALOG
                                 },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.appointmentColor,
+                            backgroundColor: AppColors.primaryColor,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16)),
                             elevation: 0,
@@ -407,7 +407,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         textCapitalization: TextCapitalization.words,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: AppColors.appointmentColor, size: 22),
+          prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 22),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: Colors.grey[300]!)),
@@ -416,7 +416,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               borderSide: BorderSide(color: Colors.grey[200]!)),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.appointmentColor)),
+              borderSide: const BorderSide(color: AppColors.primaryColor)),
           filled: true,
           fillColor: Colors.grey[50],
         ),
@@ -451,10 +451,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           leading: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: AppColors.appointmentColor.withValues(alpha: 0.1),
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle),
             child: Icon(isPast ? Icons.event_available : Icons.event,
-                color: AppColors.appointmentColor),
+                color: AppColors.primaryColor),
           ),
           title: Text(appointment.title,
               style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -462,7 +462,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               '${_formatDate(appointment.scheduledAt)} at ${_formatTime(appointment.scheduledAt)}\n${appointment.locationText ?? 'No location'}'),
           isThreeLine: true,
           trailing: const Icon(Icons.edit_outlined,
-              size: 20, color: AppColors.appointmentColor),
+              size: 20, color: AppColors.primaryColor),
         ),
       ),
     );
@@ -480,7 +480,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.text('mySchedule')),
-        backgroundColor: AppColors.appointmentColor,
+        backgroundColor: AppColors.primaryColor,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
@@ -521,7 +521,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'appointments_fab',
         onPressed: _showBookAppointmentDialog,
-        backgroundColor: AppColors.appointmentColor,
+        backgroundColor: AppColors.primaryColor,
         label: Text(strings.text('addAppointment'),
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold)),

@@ -23,7 +23,7 @@ class AppStrings {
   static const Map<String, Map<String, String>> _values =
       <String, Map<String, String>>{
     'en': <String, String>{
-      'appName': 'MyUbat',
+      'appName': 'Medisense',
       'languageEnglish': 'English',
       'languageMalay': 'Bahasa Melayu',
       'languageChinese': 'Chinese',
@@ -60,7 +60,7 @@ class AppStrings {
       'language': 'Language',
       'selectLanguage': 'Select Language',
       'about': 'About',
-      'aboutMyUbat': 'About MyUbat',
+      'aboutMyUbat': 'About Medisense',
       'versionLabel': 'Version 1.0.0',
       'dangerZone': 'Danger Zone',
       'deleteAccount': 'Delete Account',
@@ -83,7 +83,7 @@ class AppStrings {
       'unableDeleteAccount': 'Unable to delete account.',
       'aboutHeadline': 'Digital health companion for daily care',
       'aboutDescription':
-          'MyUbat helps users manage medications, appointments, profiles, and AI-assisted health guidance in one place.',
+          'Medisense helps users manage medications, appointments, profiles, and AI-assisted health guidance in one place.',
       'aboutHighlightsTitle': 'Core features',
       'aboutHighlightOne': 'Track medication schedules and reminders',
       'aboutHighlightTwo': 'Manage appointments and nearby facilities',
@@ -91,7 +91,7 @@ class AppStrings {
       'aboutHighlightFour': 'Ask the built-in AI assistant for guidance',
       'aboutDisclaimerTitle': 'Important note',
       'aboutDisclaimerBody':
-          'MyUbat supports health management and education. It does not replace professional medical advice, diagnosis, or emergency care.',
+          'Medisense supports health management and education. It does not replace professional medical advice, diagnosis, or emergency care.',
       'aboutBuiltFor':
           'Built for academic demonstration and personal health tracking.',
       'close': 'Close',
@@ -144,7 +144,7 @@ class AppStrings {
       'schedule': 'Schedule',
       'noAppointmentsToday': 'No appointments scheduled for today.',
       'locationNotSet': 'Location not set',
-      'welcomeToMyUbat': 'Welcome to MyUbat',
+      'welcomeToMyUbat': 'Welcome to Medisense',
       'signInToContinue': 'Sign in to continue',
       'enterYourEmail': 'Enter your email',
       'enterYourPassword': 'Enter your password',
@@ -199,7 +199,7 @@ class AppStrings {
       'aiAnalyzingLabel': 'AI Analyzing Label...',
     },
     'ms': <String, String>{
-      'appName': 'MyUbat',
+      'appName': 'Medisense',
       'languageEnglish': 'English',
       'languageMalay': 'Bahasa Melayu',
       'languageChinese': 'Cina',
@@ -236,7 +236,7 @@ class AppStrings {
       'language': 'Bahasa',
       'selectLanguage': 'Pilih Bahasa',
       'about': 'Tentang',
-      'aboutMyUbat': 'Tentang MyUbat',
+      'aboutMyUbat': 'Tentang Medisense',
       'versionLabel': 'Versi 1.0.0',
       'dangerZone': 'Zon Bahaya',
       'deleteAccount': 'Padam Akaun',
@@ -258,7 +258,7 @@ class AppStrings {
       'unableDeleteAccount': 'Tidak dapat memadam akaun.',
       'aboutHeadline': 'Rakan kesihatan digital untuk penjagaan harian',
       'aboutDescription':
-          'MyUbat membantu pengguna mengurus ubat, janji temu, profil, dan panduan kesihatan berasaskan AI dalam satu aplikasi.',
+          'Medisense membantu pengguna mengurus ubat, janji temu, profil, dan panduan kesihatan berasaskan AI dalam satu aplikasi.',
       'aboutHighlightsTitle': 'Fungsi utama',
       'aboutHighlightOne': 'Jejaki jadual ubat dan peringatan',
       'aboutHighlightTwo': 'Urus janji temu dan fasiliti berhampiran',
@@ -266,7 +266,7 @@ class AppStrings {
       'aboutHighlightFour': 'Tanya pembantu AI terbina dalam untuk panduan',
       'aboutDisclaimerTitle': 'Nota penting',
       'aboutDisclaimerBody':
-          'MyUbat menyokong pengurusan dan pendidikan kesihatan. Ia tidak menggantikan nasihat perubatan profesional, diagnosis, atau rawatan kecemasan.',
+          'Medisense menyokong pengurusan dan pendidikan kesihatan. Ia tidak menggantikan nasihat perubatan profesional, diagnosis, atau rawatan kecemasan.',
       'aboutBuiltFor':
           'Dibangunkan untuk demonstrasi akademik dan penjejakan kesihatan peribadi.',
       'close': 'Tutup',
@@ -319,7 +319,7 @@ class AppStrings {
       'schedule': 'Jadual',
       'noAppointmentsToday': 'Tiada janji temu untuk hari ini.',
       'locationNotSet': 'Lokasi belum ditetapkan',
-      'welcomeToMyUbat': 'Selamat datang ke MyUbat',
+      'welcomeToMyUbat': 'Selamat datang ke Medisense',
       'signInToContinue': 'Log masuk untuk teruskan',
       'enterYourEmail': 'Masukkan e-mel anda',
       'enterYourPassword': 'Masukkan kata laluan anda',
@@ -374,7 +374,7 @@ class AppStrings {
       'aiAnalyzingLabel': 'AI sedang menganalisis label...',
     },
     'zh': <String, String>{
-      'appName': 'MyUbat',
+      'appName': 'Medisense',
       'languageEnglish': '英语',
       'languageMalay': '马来语',
       'languageChinese': '中文',
@@ -411,7 +411,7 @@ class AppStrings {
       'language': '语言',
       'selectLanguage': '选择语言',
       'about': '关于',
-      'aboutMyUbat': '关于 MyUbat',
+      'aboutMyUbat': '关于 Medisense',
       'versionLabel': '版本 1.0.0',
       'dangerZone': '危险区域',
       'deleteAccount': '删除账户',
@@ -433,7 +433,7 @@ class AppStrings {
       'unableDeleteAccount': '无法删除账户。',
       'aboutHeadline': '你的日常数字健康伙伴',
       'aboutDescription':
-          'MyUbat 帮助用户在一个应用中管理药物、预约、个人资料，以及 AI 辅助健康指导。',
+          'Medisense 帮助用户在一个应用中管理药物、预约、个人资料，以及 AI 辅助健康指导。',
       'aboutHighlightsTitle': '核心功能',
       'aboutHighlightOne': '追踪药物时间表与提醒',
       'aboutHighlightTwo': '管理预约与附近医疗设施',
@@ -441,7 +441,7 @@ class AppStrings {
       'aboutHighlightFour': '向内建 AI 助手获取健康建议',
       'aboutDisclaimerTitle': '重要说明',
       'aboutDisclaimerBody':
-          'MyUbat 仅用于健康管理与教育，不可替代专业医疗建议、诊断或紧急护理。',
+          'Medisense 仅用于健康管理与教育，不可替代专业医疗建议、诊断或紧急护理。',
       'aboutBuiltFor': '为学术展示与个人健康追踪而设计。',
       'close': '关闭',
       'logoutQuestion': '要退出登录吗？',
@@ -491,7 +491,7 @@ class AppStrings {
       'schedule': '日程',
       'noAppointmentsToday': '今天没有预约。',
       'locationNotSet': '尚未设置地点',
-      'welcomeToMyUbat': '欢迎使用 MyUbat',
+      'welcomeToMyUbat': '欢迎使用 Medisense',
       'signInToContinue': '登录以继续',
       'enterYourEmail': '输入你的电子邮件',
       'enterYourPassword': '输入你的密码',

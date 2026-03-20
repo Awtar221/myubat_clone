@@ -155,6 +155,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Future<void> _sendMessage({String? overrideContent}) async {
     final strings = context.strings;
+    final localeCode = Localizations.localeOf(context).languageCode;
     final content = (overrideContent ?? _messageController.text).trim();
     if (content.isEmpty && _selectedImageBytes == null) return;
     if (_isGeneratingResponse) return;
@@ -192,7 +193,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             : content,
         userContext: userContext,
         recentMessages: _latestMessages,
-        languageCode: Localizations.localeOf(context).languageCode,
+        languageCode: localeCode,
         imageBytes: imageToUpload,
       );
 
@@ -317,11 +318,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       return false;
     }
 
+    final localeCode = Localizations.localeOf(context).languageCode;
+    final strings = context.strings;
+
     final normalizedText = updatedText.trim();
     final hasImage = targetMessage.imageBase64 != null &&
         targetMessage.imageBase64!.isNotEmpty;
     if (normalizedText.isEmpty && !hasImage) {
-      _showErrorSnackBar(context.strings.text('promptCannotBeEmpty'));
+      _showErrorSnackBar(strings.text('promptCannotBeEmpty'));
       return false;
     }
 
@@ -338,12 +342,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         .where((message) => message.id.isNotEmpty)
         .toList(growable: false);
     final promptText = normalizedText.isEmpty
-        ? context.strings.text('analyzeHealthImagePrompt')
+        ? strings.text('analyzeHealthImagePrompt')
         : normalizedText;
     final assistantImageBytes =
         hasImage ? base64Decode(targetMessage.imageBase64!) : null;
     final persistedPrompt = normalizedText.isEmpty
-        ? context.strings.text('analyzingAttachedImage')
+        ? strings.text('analyzingAttachedImage')
         : normalizedText;
 
     setState(() {
@@ -360,7 +364,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         userText: promptText,
         userContext: userContext,
         recentMessages: previousMessages,
-        languageCode: Localizations.localeOf(context).languageCode,
+        languageCode: localeCode,
         imageBytes: assistantImageBytes,
       );
 
@@ -375,11 +379,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       return true;
     } catch (e) {
       debugPrint('Edit prompt failed: $e');
-      _showErrorSnackBar(
-        e is AppConfigException
-            ? e.message
-            : context.strings.text('editPromptFailed'),
-      );
+      if (mounted) {
+        _showErrorSnackBar(
+          e is AppConfigException ? e.message : strings.text('editPromptFailed'),
+        );
+      }
       return false;
     } finally {
       if (mounted) {
@@ -394,22 +398,24 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       return;
     }
 
+    final strings = context.strings;
+
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(context.strings.text('deleteConversationQuestion')),
+        title: Text(strings.text('deleteConversationQuestion')),
         content: Text(
-          context.strings.text('deleteConversationDescription'),
+          strings.text('deleteConversationDescription'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(context.strings.text('cancel')),
+            child: Text(strings.text('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: Text(context.strings.text('delete')),
+            child: Text(strings.text('delete')),
           ),
         ],
       ),
@@ -433,7 +439,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       );
     } catch (e) {
       debugPrint('Delete conversation failed: $e');
-      _showErrorSnackBar(context.strings.text('deleteConversationFailed'));
+      if (mounted) {
+        _showErrorSnackBar(strings.text('deleteConversationFailed'));
+      }
     } finally {
       if (mounted) {
         setState(() => _isGeneratingResponse = false);

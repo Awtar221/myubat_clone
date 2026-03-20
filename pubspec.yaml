@@ -1,5 +1,5 @@
-name: mysejahtera_clone
-description: A MySejahtera clone application for health tracking
+name: medisense
+description: Medisense health assistant application
 
 publish_to: 'none'
 
@@ -59,3 +59,10 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon.png" # Path to your icon
+  min_sdk_android: 21
+

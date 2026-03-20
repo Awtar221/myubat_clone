@@ -55,20 +55,20 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const MyUbatApp());
+  runApp(const MedisenseApp());
 }
 
-class MyUbatApp extends StatefulWidget {
-  const MyUbatApp({super.key});
+class MedisenseApp extends StatefulWidget {
+  const MedisenseApp({super.key});
 
-  static _MyUbatAppState? of(BuildContext context) =>
-      context.findAncestorStateOfType<_MyUbatAppState>();
+  static MedisenseAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<MedisenseAppState>();
 
   @override
-  State<MyUbatApp> createState() => _MyUbatAppState();
+  State<MedisenseApp> createState() => MedisenseAppState();
 }
 
-class _MyUbatAppState extends State<MyUbatApp> {
+class MedisenseAppState extends State<MedisenseApp> {
   static const String _localePreferenceKey = 'app_locale';
 
   final SettingsRepository _settingsRepository = SettingsRepository();
@@ -142,7 +142,7 @@ class _MyUbatAppState extends State<MyUbatApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MyUbat',
+      title: 'Medisense',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
       locale: _locale,

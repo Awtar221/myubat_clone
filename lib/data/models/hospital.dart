@@ -7,7 +7,7 @@ class Hospital {
   final LatLng location;
   final double rating;
   final double distance; // in km
-  final String busyness; // Replaced estimatedWaitTime with busyness
+  final String busyness;
   final String type;
 
   Hospital({
@@ -22,19 +22,14 @@ class Hospital {
   });
 
   factory Hospital.fromMap(Map<String, dynamic> map, LatLng userLocation, double distance) {
+    final String name = map['name'] ?? '';
     final List types = map['types'] ?? [];
-    String displayType = 'Healthcare Facility';
-    if (types.contains('hospital')) {
-      displayType = 'Hospital';
-    } else if (types.contains('clinic')) {
-      displayType = 'Clinic';
-    } else if (types.contains('health')) {
-      displayType = 'Health Centre';
-    }
+    
+    String displayType = _detectType(name, types);
 
     return Hospital(
       id: map['place_id'] ?? '',
-      name: map['name'] ?? '',
+      name: name,
       address: map['vicinity'] ?? '',
       location: LatLng(
         map['geometry']['location']['lat'],
@@ -47,25 +42,48 @@ class Hospital {
     );
   }
 
+  static String _detectType(String name, List types) {
+    final lowerName = name.toLowerCase();
+    
+    // Check Pharmacy/Farmasi
+    if (types.contains('pharmacy') || 
+        lowerName.contains('pharmacy') || 
+        lowerName.contains('farmasi')) {
+      return 'Pharmacy';
+    }
+    
+    // Check Hospital
+    if (types.contains('hospital') || 
+        lowerName.contains('hospital')) {
+      return 'Hospital';
+    }
+    
+    // Check Clinic/Klinik
+    if (types.contains('clinic') || 
+        lowerName.contains('clinic') || 
+        lowerName.contains('klinik')) {
+      return 'Clinic';
+    }
+    
+    return 'Others';
+  }
+
   static String _calculateBusyness(num rating, String type) {
     final now = DateTime.now();
     int score = 0;
 
-    // 1. Facility Type Factor
     if (type == 'Hospital') {
       score += 3;
     } else if (type == 'Clinic') {
       score += 1;
     }
 
-    // 2. Day of Week Factor
     if (now.weekday == DateTime.monday) {
       score += 2;
     } else if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
       score += 1;
     }
 
-    // 3. Peak Hour Factor
     if (now.hour >= 8 && now.hour <= 11) {
       score += 4;
     } else if (now.hour >= 18 && now.hour <= 21) {
@@ -74,7 +92,6 @@ class Hospital {
       score -= 2;
     }
 
-    // 4. Rating as proxy
     if (rating >= 4.5) {
       score += 3;
     } else if (rating >= 3.5) {
@@ -83,18 +100,10 @@ class Hospital {
       score += 1;
     }
 
-    if (score >= 10) {
-      return 'Very Busy';
-    }
-    if (score >= 7) {
-      return 'Busy';
-    }
-    if (score >= 4) {
-      return 'Moderate';
-    }
-    if (score >= 1) {
-      return 'Quiet';
-    }
+    if (score >= 10) return 'Very Busy';
+    if (score >= 7) return 'Busy';
+    if (score >= 4) return 'Moderate';
+    if (score >= 1) return 'Quiet';
     return 'Not Busy';
   }
 }

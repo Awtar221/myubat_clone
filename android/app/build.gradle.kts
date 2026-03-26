@@ -28,8 +28,7 @@ val dartDefines =
         ?.toMap()
         .orEmpty()
 
-val googleMapsApiKey = dartDefines["GOOGLE_MAPS_API_KEY"] ?: "YOUR_GOOGLE_MAPS_KEY_HERE"
-
+val googleMapsApiKey = dartDefines["GOOGLE_MAPS_API_KEY"] ?: "AIzaSyB6ijk19bAZk3n1YE1FS4lGs5-rS5WGIGE"
 
 android {
     namespace = "com.example.mysejahtera_clone"

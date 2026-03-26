@@ -26,7 +26,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
   Hospital? _selectedHospital;
   String _selectedType = 'All';
 
-  List<String> _types = ['All'];
+  final List<String> _types = ['All', 'Hospital', 'Pharmacy', 'Clinic', 'Others'];
 
   @override
   void initState() {
@@ -76,15 +76,6 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
     
     setState(() {
       _hospitals = hospitals;
-      
-      final foundTypes = _hospitals.map((h) => h.type).toSet().toList();
-      foundTypes.sort();
-      _types = ['All', ...foundTypes];
-      
-      if (!_types.contains(_selectedType)) {
-        _selectedType = 'All';
-      }
-
       _applyFilter();
       _isLoading = false;
     });
@@ -92,11 +83,16 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
 
   void _applyFilter() {
     setState(() {
+      List<Hospital> results;
       if (_selectedType == 'All') {
-        _filteredHospitals = List.from(_hospitals);
+        results = List.from(_hospitals);
       } else {
-        _filteredHospitals = _hospitals.where((h) => h.type == _selectedType).toList();
+        results = _hospitals.where((h) => h.type == _selectedType).toList();
       }
+
+      // Sort by distance and limit to 50 results
+      results.sort((a, b) => a.distance.compareTo(b.distance));
+      _filteredHospitals = results.take(50).toList();
 
       _markers = _filteredHospitals.map((h) => Marker(
         markerId: MarkerId(h.id),
@@ -506,7 +502,6 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
     if (type == 'Hospital') return Icons.local_hospital;
     if (type == 'Clinic') return Icons.medical_services;
     if (type == 'Pharmacy') return Icons.local_pharmacy;
-    if (type == 'Medical Centre') return Icons.business;
     return Icons.health_and_safety;
   }
 

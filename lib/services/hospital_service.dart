@@ -10,15 +10,14 @@ class HospitalService {
   final String _apiKey = AppConfig.googleMapsApiKey;
 
   Future<List<Hospital>> getNearestHospitals(LatLng userLocation) async {
-    // We will perform three separate targeted searches to ensure we get 20 of each
-    // 1. Strict Hospital Search (High priority, large radius)
-    // 2. Pharmacy Search
-    // 3. Clinic/Medical Search
+    // To get up to 50 results per category, we search specifically for each.
+    // Google Places API returns max 20 per request, but we can try to get more via keywords.
     
     final List<String> queries = [
-      'type=hospital&keyword=hospital', // Search A: Strict Hospitals
-      'type=pharmacy',                  // Search B: Pharmacies
-      'keyword=clinic|klinik|medical',  // Search C: Clinics
+      'type=hospital&keyword=hospital', 
+      'type=pharmacy&keyword=pharmacy|farmasi',
+      'type=clinic&keyword=clinic|klinik',
+      'keyword=medical|health|doctor', // For "Others"
     ];
 
     try {
@@ -26,8 +25,8 @@ class HospitalService {
         queries.map((q) => http.get(Uri.parse(
           'https://maps.googleapis.com/maps/api/place/nearbysearch/json?'
           'location=${userLocation.latitude},${userLocation.longitude}'
+          '&radius=10000' // 10km radius
           '&$q'
-          '&rankby=distance'
           '&key=$_apiKey'
         )))
       );
@@ -55,11 +54,9 @@ class HospitalService {
         }
       }
 
-      // Final sort to keep the UI intuitive
+      // Sort by distance
       allResults.sort((a, b) => a.distance.compareTo(b.distance));
       
-      // We return all gathered results (which could be up to 60 total)
-      // The individual category counts are handled by Google's rankby=distance limit (20 per type)
       return allResults;
     } catch (e) {
       debugPrint('Error fetching healthcare: $e');

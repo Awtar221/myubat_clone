@@ -35,7 +35,7 @@ class MedicationListCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color.fromARGB(26, 123, 31, 162),
+                      color: const Color.fromARGB(26, 123, 31, 162),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -71,7 +71,7 @@ class MedicationListCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Color.fromARGB(26, 255, 167, 38),
+                        color: const Color.fromARGB(26, 255, 167, 38),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(

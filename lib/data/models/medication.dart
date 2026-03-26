@@ -11,10 +11,12 @@ class Medication {
     this.instructions,
     List<String> scheduleTimes = const <String>[],
     List<String>? times,
+    this.intakeDateTime,
     this.startDate,
     this.endDate,
     this.daysOfWeek = const <int>[],
     this.isActive = true,
+    this.remindersEnabled = true,
     this.createdAt,
     this.updatedAt,
   })  : dosageText = dosageText ?? dosage,
@@ -27,10 +29,12 @@ class Medication {
   final String? dosageText;
   final String? instructions;
   final List<String> scheduleTimes;
+  final Timestamp? intakeDateTime;
   final Timestamp? startDate;
   final Timestamp? endDate;
   final List<int> daysOfWeek;
   final bool isActive;
+  final bool remindersEnabled;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
@@ -53,10 +57,13 @@ class Medication {
           ? map[fields.instructions] as String
           : null,
       scheduleTimes: parsedScheduleTimes,
+      intakeDateTime: asTimestamp(map[fields.intakeDateTime]) ??
+          asTimestamp(map[fields.startDate]),
       startDate: asTimestamp(map[fields.startDate]),
       endDate: asTimestamp(map[fields.endDate]),
       daysOfWeek: asIntList(map[fields.daysOfWeek]),
       isActive: asBool(map[fields.isActive], fallback: true),
+      remindersEnabled: asBool(map[fields.remindersEnabled], fallback: true),
       createdAt: asTimestamp(map[fields.createdAt]),
       updatedAt: asTimestamp(map[fields.updatedAt]),
     );
@@ -70,10 +77,12 @@ class Medication {
       fields.instructions: instructions,
       fields.scheduleTimes: scheduleTimes,
       fields.times: scheduleTimes,
+      fields.intakeDateTime: intakeDateTime,
       fields.daysOfWeek: daysOfWeek,
       fields.startDate: startDate,
       fields.endDate: endDate,
       fields.isActive: isActive,
+      fields.remindersEnabled: remindersEnabled,
     };
   }
 }

@@ -24,6 +24,21 @@ flutter pub get
 flutter run
 ```
 
+## Local Notifications (Android)
+- Notification stack:
+  - `flutter_local_notifications`
+  - `timezone` + `flutter_timezone`
+- Android 13+ requires runtime notification permission (`POST_NOTIFICATIONS`).
+- Reminder schedule policy:
+  - 3h before event
+  - 1h before event
+  - 30m before event
+- Reminder IDs are deterministic and typed: `stableHash("$type:$eventId") % 100000` with offsets `+1/+2/+3`.
+- Notification payload type:
+  - medication: `{"type":"medication","eventId":"..."}`
+  - appointment: `{"type":"appointment","eventId":"..."}`
+- If reminder time is already in the past, it is skipped automatically.
+
 ## Gemini Usage Notes
 - Runtime key injection:
 ```bash
@@ -65,6 +80,24 @@ Minimum fields:
 Expected result on Home:
 - `Next` card shows nearest upcoming appointment time (or empty state if none)
 
+### 2.1) Reminder fields for medication/appointment docs
+- Medication document (`users/{uid}/medications/{medicationId}`):
+  - `remindersEnabled` (bool, default `true` if missing)
+  - `intakeDateTime` (Timestamp, optional; fallback to `startDate`)
+- Appointment document (`users/{uid}/appointments/{appointmentId}`):
+  - `remindersEnabled` (bool, default `true` if missing)
+  - `eventDateTime` (Timestamp; canonical reminder datetime)
+
+### 2.2) Notification verification
+1. Open app on Android emulator/device and allow notification permission.
+2. Create a medication or appointment with a future datetime and reminders enabled.
+3. Update the same item and change time:
+   - Expected: old reminders canceled, only new reminders remain.
+4. Delete the item:
+   - Expected: associated reminders are canceled.
+5. Debug quick test:
+   - Settings -> Developer -> `Test Reminder (1 min)` (debug build only).
+
 ### 3) Welcome header
 Path: `users/{uid}`
 
@@ -80,6 +113,25 @@ Expected result on Home:
   - Home profile-gate fallback: creates minimal `users/{uid}` if missing
   - Home intake ensure: creates missing daily intake docs idempotently
 - These writes are expected and required for demo behavior.
+
+## Notifications & Reminders (Android Demo)
+- Required Android permissions/settings:
+  - Android 13+: `Settings -> Apps -> (App) -> Notifications -> Allow`
+  - Android 12+: `Settings -> Apps -> Special app access -> Alarms & reminders (Exact alarms) -> Allow`
+  - Recommended: disable battery optimization for the app (`Not optimized`) for better reliability.
+- Reminder behavior:
+  - For each medication/appointment event, reminders are scheduled at `3h`, `1h`, `30m` before event time.
+  - Offsets already in the past are skipped.
+  - Update flow is cancel then reschedule; delete cancels reminders.
+- Quick tests:
+  - `Settings -> Developer -> Test Reminder (1 min)` for a near-1-minute notification check.
+  - Scaled 3-reminder test:
+    - Run: `flutter run --dart-define=DEBUG_REMINDER_SCALE=true`
+    - Then tap `Settings -> Developer -> Test 3 reminders (10/20/30s)`
+    - Expected: three notifications around `~10s`, `~20s`, `~30s`.
+  - Without `DEBUG_REMINDER_SCALE=true`, production offsets stay `3h/1h/30m`.
+- Device note:
+  - Validate reminders on a real device whenever possible; emulator behavior can differ due to OS policies.
 
 ## Teammate Checklist (Kelvin / Jaff)
 1. `git pull`

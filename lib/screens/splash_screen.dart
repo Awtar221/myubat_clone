@@ -1,9 +1,14 @@
 import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../constants/app_colors.dart';
 import '../data/models/app_user.dart';
 import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
+import '../services/notification/notification_service.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'profile_setup_screen.dart';
@@ -38,7 +43,25 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    await _requestPermissions();
     _scheduleProfileGateCheck();
+  }
+
+  Future<void> _requestPermissions() async {
+    try {
+      await [
+        Permission.location,
+        Permission.camera,
+        Permission.microphone,
+      ].request();
+      await NotificationService.instance.requestPermissionsAndroid();
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
+    }
   }
 
   void _scheduleProfileGateCheck() {
@@ -66,9 +89,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     repository.touchLastLogin(currentUser.uid).catchError((e, st) {
       debugPrint('touchLastLogin at splash failed: $e');
-      if (st is StackTrace) {
-        debugPrintStack(stackTrace: st);
-      }
     });
 
     try {
@@ -96,12 +116,11 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         );
       }
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('Splash profile gate failed: $e');
-      debugPrintStack(stackTrace: st);
       if (mounted) {
         setState(() {
-          _gateError = 'Unable to verify profile. Please try again.';
+          _gateError = context.strings.text('unableVerifyProfile');
         });
       }
     } finally {
@@ -148,6 +167,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -167,7 +188,7 @@ class _SplashScreenState extends State<SplashScreen>
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 1.0),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -180,9 +201,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 30),
-                const Text(
-                  'MyUbat',
-                  style: TextStyle(
+                Text(
+                  strings.text('appName'),
+                  style: const TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -190,9 +211,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Your Medication Companion',
-                  style: TextStyle(
+                Text(
+                  strings.text('yourMedicationCompanion'),
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
                     letterSpacing: 1,
@@ -221,7 +242,7 @@ class _SplashScreenState extends State<SplashScreen>
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Retry'),
+                    child: Text(strings.text('retry')),
                   ),
                 ],
               ],

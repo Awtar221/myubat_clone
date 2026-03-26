@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../constants/app_colors.dart';
 import '../data/models/medication.dart';
+import '../data/models/today_intake_item.dart';
 import '../data/repositories/medication_repository.dart';
+import '../l10n/app_strings.dart';
+import '../services/ai/gemini_service.dart';
+import '../services/notification/notification_service.dart';
+import '../widgets/medication_reminder_card.dart';
 
 class MedicationTrackerScreen extends StatefulWidget {
   const MedicationTrackerScreen({super.key});
@@ -16,8 +22,11 @@ class MedicationTrackerScreen extends StatefulWidget {
 class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController =
-  TabController(length: 2, vsync: this);
+      TabController(length: 2, vsync: this);
   final MedicationRepository _medicationRepository = MedicationRepository();
+  final GeminiService _geminiService = GeminiService();
+  final ImagePicker _picker = ImagePicker();
+  final Set<String> _pendingToggles = {};
 
   @override
   void dispose() {
@@ -25,141 +34,387 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     super.dispose();
   }
 
-  Future<void> _showAddMedicationDialog() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      return;
-    }
+  Future<void> _toggleIntake(String uid, TodayIntakeItem item) async {
+    final key = '${item.medicationId}:${item.intakeId}';
+    if (_pendingToggles.contains(key)) return;
 
-    final nameController = TextEditingController();
-    final dosageController = TextEditingController();
-    final frequencyController = TextEditingController();
+    setState(() => _pendingToggles.add(key));
+    try {
+      await _medicationRepository.toggleIntakeTaken(
+        uid,
+        item.medicationId,
+        item.intakeId,
+        !item.taken,
+      );
+    } finally {
+      if (mounted) setState(() => _pendingToggles.remove(key));
+    }
+  }
+
+  Future<void> _deleteMedication(String uid, String medicationId) async {
+    await _medicationRepository.deleteMedication(uid, medicationId);
+  }
+
+  Future<void> _scanMedicationLabel(
+      Function(Map<String, String>) onScanned) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(context.strings.text('aiAnalyzingLabel')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final bytes = await image.readAsBytes();
+      final result = await _geminiService.scanMedication(bytes);
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (result.containsKey('error')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(result['error']!),
+              backgroundColor: AppColors.error),
+        );
+      } else {
+        onScanned(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Error: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddMedicationDialog(
+      {Medication? existingMedication,
+      Map<String, String>? initialData}) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final initialIntakeDateTime =
+        existingMedication?.intakeDateTime?.toDate() ??
+            existingMedication?.startDate?.toDate() ??
+            DateTime.now().add(const Duration(hours: 1));
+
+    final nameController = TextEditingController(
+        text: existingMedication?.name ?? initialData?['name']);
+    final dosageController = TextEditingController(
+        text: existingMedication?.dosage ?? initialData?['dosage']);
+    final frequencyController = TextEditingController(
+        text: existingMedication?.instructions ?? initialData?['instructions']);
+    final timeController = TextEditingController(
+        text: existingMedication?.times.isNotEmpty == true
+            ? existingMedication!.times.first
+            : '${initialIntakeDateTime.hour.toString().padLeft(2, '0')}:${initialIntakeDateTime.minute.toString().padLeft(2, '0')}');
+
     bool isSaving = false;
+    bool remindersEnabled = existingMedication?.remindersEnabled ?? true;
+    DateTime selectedIntakeDateTime = initialIntakeDateTime;
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            Future<void> saveMedication() async {
-              final name = nameController.text.trim();
-              final scheduleTimes =
-              _extractScheduleTimes(frequencyController.text);
-              if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Medication name is required.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                return;
-              }
-
-              setModalState(() {
-                isSaving = true;
-              });
-
-              try {
-                final medication = Medication(
-                  name: name,
-                  dosage: dosageController.text.trim().isEmpty
-                      ? null
-                      : dosageController.text.trim(),
-                  instructions: frequencyController.text.trim().isEmpty
-                      ? null
-                      : frequencyController.text.trim(),
-                  scheduleTimes: scheduleTimes,
-                  startDate: Timestamp.now(),
-                  isActive: true,
-                );
-                await _medicationRepository.upsertMedication(uid, medication);
-                if (!context.mounted) {
-                  return;
-                }
-                Navigator.of(context).pop();
-              } finally {
-                setModalState(() {
-                  isSaving = false;
-                });
-              }
-            }
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Add Medication',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Medication Name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.medication_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: dosageController,
-                    decoration: InputDecoration(
-                      labelText: 'Dosage',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.science_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: frequencyController,
-                    decoration: InputDecoration(
-                      labelText: 'Schedule Times',
-                      hintText: '09:00, 14:00, 20:00',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.schedule),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isSaving ? null : saveMedication,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.medicationColor,
-                      ),
-                      child: isSaving
-                          ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2)),
                         ),
-                      )
-                          : const Text('Add Medication'),
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                              existingMedication == null
+                                  ? 'Add Medication'
+                                  : 'Edit Medication',
+                              style: const TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.bold)),
+                          if (existingMedication == null && initialData == null)
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _scanMedicationLabel((data) =>
+                                    _showAddMedicationDialog(
+                                        initialData: data));
+                              },
+                              icon: const Icon(Icons.camera_alt, size: 20),
+                              label: const Text('AI Scan'),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.medicationColor),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildTextField(
+                          controller: nameController,
+                          label: 'Medication Name',
+                          icon: Icons.medication_outlined),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                          controller: dosageController,
+                          label: 'Dosage',
+                          icon: Icons.science_outlined),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                          controller: frequencyController,
+                          label: 'Instructions',
+                          hint: 'e.g., Take after meal',
+                          icon: Icons.info_outline),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: timeController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Schedule Time',
+                          hintText: 'Tap to set time',
+                          prefixIcon: const Icon(Icons.schedule,
+                              color: AppColors.medicationColor),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                              selectedIntakeDateTime,
+                            ),
+                          );
+                          if (picked != null) {
+                            final timeString =
+                                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                            setModalState(() {
+                              timeController.text = timeString;
+                              selectedIntakeDateTime = DateTime(
+                                selectedIntakeDateTime.year,
+                                selectedIntakeDateTime.month,
+                                selectedIntakeDateTime.day,
+                                picked.hour,
+                                picked.minute,
+                              );
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedIntakeDateTime,
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 365),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365 * 3),
+                            ),
+                          );
+                          if (date == null || !context.mounted) {
+                            return;
+                          }
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                              selectedIntakeDateTime,
+                            ),
+                          );
+                          if (time == null) {
+                            return;
+                          }
+                          setModalState(() {
+                            selectedIntakeDateTime = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              time.hour,
+                              time.minute,
+                            );
+                            timeController.text =
+                                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                          });
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Intake Date & Time',
+                            prefixIcon: const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.medicationColor,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          child: Text(_formatDateTime(selectedIntakeDateTime)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Reminders'),
+                        subtitle: const Text(
+                          'Reminds you 3h, 1h, 30m before',
+                        ),
+                        value: remindersEnabled,
+                        activeThumbColor: AppColors.medicationColor,
+                        onChanged: (value) {
+                          setModalState(() {
+                            remindersEnabled = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: isSaving
+                              ? null
+                              : () async {
+                                  final name = nameController.text.trim();
+                                  if (name.isEmpty) return;
+                                  final scheduleTime = timeController.text
+                                          .trim()
+                                          .isEmpty
+                                      ? '${selectedIntakeDateTime.hour.toString().padLeft(2, '0')}:${selectedIntakeDateTime.minute.toString().padLeft(2, '0')}'
+                                      : timeController.text.trim();
+
+                                  setModalState(() => isSaving = true);
+                                  try {
+                                    final medication = Medication(
+                                      id: existingMedication?.id ?? '',
+                                      name: name,
+                                      dosage: dosageController.text.trim(),
+                                      instructions:
+                                          frequencyController.text.trim(),
+                                      scheduleTimes: <String>[scheduleTime],
+                                      remindersEnabled: remindersEnabled,
+                                      intakeDateTime: Timestamp.fromDate(
+                                        selectedIntakeDateTime,
+                                      ),
+                                      startDate:
+                                          existingMedication?.startDate ??
+                                              Timestamp.fromDate(
+                                                selectedIntakeDateTime,
+                                              ),
+                                      isActive: true,
+                                    );
+                                    await _medicationRepository
+                                        .upsertMedication(uid, medication);
+                                  } on ExactAlarmPermissionException catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Saved, but reminder was not scheduled. ${e.toString()}',
+                                          ),
+                                          backgroundColor: AppColors.error,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                      Navigator.of(context).pop();
+                                    }
+                                    return;
+                                  } finally {
+                                    if (mounted) {
+                                      setModalState(() => isSaving = false);
+                                    }
+                                  }
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (remindersEnabled &&
+                                      !selectedIntakeDateTime
+                                          .isAfter(DateTime.now())) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Saved. Reminder time is in the past, so no reminder was scheduled.',
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                  Navigator.of(context).pop();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.medicationColor,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          child: isSaving
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2.5))
+                              : Text(
+                                  existingMedication == null
+                                      ? 'Add Medication'
+                                      : 'Update Medication',
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
           },
@@ -168,211 +423,175 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     );
   }
 
-  List<String> _extractScheduleTimes(String raw) {
-    final normalized = <String>[];
-    final segments = raw
-        .split(RegExp(r'[,;\n]'))
-        .map((segment) => segment.trim())
-        .where((segment) => segment.isNotEmpty);
-
-    for (final segment in segments) {
-      final parsed = _tryParseTo24Hour(segment);
-      if (parsed == null) {
-        continue;
-      }
-      if (!normalized.contains(parsed)) {
-        normalized.add(parsed);
-      }
-    }
-
-    if (normalized.isEmpty) {
-      return const <String>['09:00'];
-    }
-    return normalized;
-  }
-
-  String? _tryParseTo24Hour(String input) {
-    final hhmm = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$').firstMatch(input);
-    if (hhmm != null) {
-      final hour = int.parse(hhmm.group(1)!);
-      final minute = int.parse(hhmm.group(2)!);
-      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-    }
-
-    final amPm = RegExp(
-      r'^([1-9]|1[0-2]):([0-5]\d)\s*([AaPp][Mm])$',
-    ).firstMatch(input);
-    if (amPm != null) {
-      final hour12 = int.parse(amPm.group(1)!);
-      final minute = int.parse(amPm.group(2)!);
-      final suffix = amPm.group(3)!.toLowerCase();
-      final hour24 = (hour12 % 12) + (suffix == 'pm' ? 12 : 0);
-      return '${hour24.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-    }
-
-    return null;
-  }
-
-  Future<void> _toggleTaken(
-      String uid, Medication medication, bool isTaken) async {
-    final updated = Medication(
-      id: medication.id,
-      name: medication.name,
-      dosage: medication.dosage,
-      instructions: medication.instructions,
-      times: medication.times,
-      startDate: medication.startDate,
-      endDate: medication.endDate,
-      isActive: !isTaken,
-      createdAt: medication.createdAt,
-      updatedAt: medication.updatedAt,
-    );
-    await _medicationRepository.upsertMedication(uid, updated);
-  }
-
-  Future<void> _deleteMedication(String uid, String medicationId) async {
-    await _medicationRepository.deleteMedication(uid, medicationId);
-  }
-
-  Widget _buildMedicationCard({
-    required String uid,
-    required Medication medication,
-    required bool isCompletedList,
-  }) {
-    final subtitle =
-        medication.dosage ?? medication.instructions ?? 'No dosage specified';
-    final details = medication.instructions ??
-        (medication.times.isNotEmpty ? medication.times.join(', ') : '-');
-
-    return Dismissible(
-      key: ValueKey(medication.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white),
-      ),
-      confirmDismiss: (_) async {
-        await _deleteMedication(uid, medication.id);
-        return false;
-      },
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: ListTile(
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          leading: Checkbox(
-            value: isCompletedList,
-            onChanged: (value) {
-              _toggleTaken(uid, medication, value ?? false);
-            },
-            activeColor: AppColors.success,
-          ),
-          title: Text(
-            medication.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(subtitle),
-              Text('Instructions: $details'),
-            ],
-          ),
-          trailing: Icon(
-            isCompletedList ? Icons.check_circle : Icons.medication_outlined,
-            color:
-            isCompletedList ? AppColors.success : AppColors.medicationColor,
-          ),
-        ),
+  Widget _buildTextField(
+      {required TextEditingController controller,
+      required String label,
+      String? hint,
+      required IconData icon}) {
+    return TextField(
+      controller: controller,
+      textCapitalization: TextCapitalization.words,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.medicationColor, size: 22),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[300]!)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.medicationColor)),
+        filled: true,
+        fillColor: Colors.grey[50],
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final year = dateTime.year.toString().padLeft(4, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$year-$month-$day $hour:$minute $period';
+  }
+
+  String _formatTime(Timestamp ts) {
+    final d = ts.toDate();
+    final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    return '$h:${d.minute.toString().padLeft(2, '0')} ${d.hour >= 12 ? 'PM' : 'AM'}';
   }
 
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(
-        body: Center(child: Text('Please sign in to view medications.')),
-      );
+      return Scaffold(
+          body: Center(child: Text(context.strings.text('signIn'))));
     }
+
+    final strings = context.strings;
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Medications'),
+        title: Text(strings.text('myMedications')),
         backgroundColor: AppColors.medicationColor,
+        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'Active'),
-            Tab(text: 'Completed'),
+          indicatorWeight: 3,
+          tabs: [
+            Tab(text: strings.text('active')),
+            Tab(text: strings.text('completed')),
           ],
         ),
       ),
-      body: StreamBuilder<List<Medication>>(
-        stream: _medicationRepository.listMedicationsStream(uid),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Unable to load medications.'));
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final all = snapshot.data ?? const <Medication>[];
-          final active = all.where((m) => m.isActive).toList(growable: false);
-          final completed =
-          all.where((m) => !m.isActive).toList(growable: false);
-
-          Widget buildList(List<Medication> items, bool completedList) {
-            if (items.isEmpty) {
-              return Center(
-                child: Text(
-                  completedList
-                      ? 'No completed medications'
-                      : 'No active medications',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              );
+      body: Container(
+        color: Colors.grey[50],
+        child: StreamBuilder<List<TodayIntakeItem>>(
+          stream: _medicationRepository.todayIntakesStream(uid, start, end),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(child: Text('Error loading medications.'));
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                  child: CircularProgressIndicator(
+                      color: AppColors.medicationColor));
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(15),
-              itemCount: items.length,
-              itemBuilder: (context, index) => _buildMedicationCard(
-                uid: uid,
-                medication: items[index],
-                isCompletedList: completedList,
-              ),
-            );
-          }
+            final all = snapshot.data ?? const [];
+            final active = all.where((m) => !m.taken).toList();
+            final completed = all.where((m) => m.taken).toList();
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              buildList(active, false),
-              buildList(completed, true),
-            ],
-          );
-        },
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _buildList(uid, active, false),
+                _buildList(uid, completed, true),
+              ],
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddMedicationDialog,
+        heroTag: 'medication_fab',
+        onPressed: () => _showAddMedicationDialog(),
         backgroundColor: AppColors.medicationColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Medication'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text(strings.text('addMedication'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
       ),
+    );
+  }
+
+  Widget _buildList(
+      String uid, List<TodayIntakeItem> items, bool completedList) {
+    if (items.isEmpty) {
+      return Center(
+          child: Text(
+              completedList
+                  ? context.strings.text('completedDoses')
+                  : context.strings.text('activeDoses'),
+              style: const TextStyle(color: Colors.grey)));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Dismissible(
+          key: ValueKey('${item.medicationId}_${item.intakeId}'),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(Icons.delete_outline_rounded,
+                color: Colors.white, size: 28),
+          ),
+          onDismissed: (_) => _deleteMedication(uid, item.medicationId),
+          child: MedicationReminderCard(
+            key: ValueKey(item.intakeId),
+            medicationName: item.medicationName,
+            time: _formatTime(item.scheduledAt),
+            dosage: item.dosageText,
+            instructions: item.instructions,
+            isTaken: item.taken,
+            isUpdating: _pendingToggles
+                .contains('${item.medicationId}:${item.intakeId}'),
+            onToggle: () => _toggleIntake(uid, item),
+            onTap: item.taken
+                ? null
+                : () {
+                    _medicationRepository
+                        .listMedicationsOnce(uid)
+                        .then((allMeds) {
+                      final med =
+                          allMeds.firstWhere((m) => m.id == item.medicationId);
+                      if (mounted) {
+                        _showAddMedicationDialog(existingMedication: med);
+                      }
+                    });
+                  },
+          ),
+        );
+      },
     );
   }
 }

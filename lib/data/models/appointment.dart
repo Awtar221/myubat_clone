@@ -7,12 +7,14 @@ class Appointment {
     this.id = '',
     required this.title,
     required this.startAt,
+    this.eventDateTime,
     this.endAt,
     this.status = 'scheduled',
     this.hospitalName,
     this.doctorName,
     this.locationText,
     this.notes,
+    this.remindersEnabled = true,
     this.createdAt,
     this.updatedAt,
   });
@@ -20,12 +22,14 @@ class Appointment {
   final String id;
   final String title;
   final Timestamp startAt;
+  final Timestamp? eventDateTime;
   final Timestamp? endAt;
   final String status;
   final String? hospitalName;
   final String? doctorName;
   final String? locationText;
   final String? notes;
+  final bool remindersEnabled;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
@@ -43,6 +47,9 @@ class Appointment {
       id: id,
       title: asString(map[fields.title]),
       startAt: parsedStartAt,
+      eventDateTime: asTimestamp(map[fields.eventDateTime]) ??
+          asTimestamp(map[fields.scheduledAt]) ??
+          asTimestamp(map[fields.startAt]),
       endAt: asTimestamp(map[fields.endAt]),
       status: asString(map[fields.status], fallback: 'scheduled'),
       hospitalName: map[fields.hospitalName] is String
@@ -53,17 +60,19 @@ class Appointment {
           : null,
       locationText: parsedLocation,
       notes: map[fields.notes] is String ? map[fields.notes] as String : null,
+      remindersEnabled: asBool(map[fields.remindersEnabled], fallback: true),
       createdAt: asTimestamp(map[fields.createdAt]),
       updatedAt: asTimestamp(map[fields.updatedAt]),
     );
   }
 
-  Timestamp get scheduledAt => startAt;
+  Timestamp get scheduledAt => eventDateTime ?? startAt;
   String? get locationName => locationText;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       fields.title: title,
+      fields.eventDateTime: scheduledAt,
       fields.scheduledAt: scheduledAt,
       fields.startAt: startAt,
       fields.endAt: endAt,
@@ -73,6 +82,7 @@ class Appointment {
       fields.locationName: locationName,
       fields.locationText: locationText,
       fields.notes: notes,
+      fields.remindersEnabled: remindersEnabled,
     };
   }
 }

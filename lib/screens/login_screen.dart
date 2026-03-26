@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../data/repositories/user_repository.dart';
+import 'package:flutter/material.dart';
+
 import '../constants/app_colors.dart';
+import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
@@ -16,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _rememberMe = false;
@@ -50,33 +53,39 @@ class _LoginScreenState extends State<LoginScreen> {
         final uid = user.uid;
         try {
           await UserRepository().touchLastLogin(uid);
-          debugPrint('[auth] touchLastLogin success for uid=$uid');
         } catch (e, st) {
           debugPrint('[auth] touchLastLogin failed for uid=$uid: $e');
           debugPrintStack(stackTrace: st);
         }
-      } else {
-        debugPrint('[auth] login succeeded but userCredential.user is null');
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_friendlyAuthMessage(e)),
+          content: Text(_friendlyAuthMessage(context.strings, e)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login failed. Please try again.'),
+        SnackBar(
+          content: Text(context.strings.text('loginFailed')),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -90,10 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  String _friendlyAuthMessage(FirebaseAuthException e) {
+  String _friendlyAuthMessage(AppStrings strings, FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':
-        return 'Please enter a valid email address.';
+        return strings.text('enterValidEmail');
       case 'invalid-credential':
       case 'user-not-found':
       case 'wrong-password':
@@ -105,12 +114,14 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'network-request-failed':
         return 'Network error. Check your connection and try again.';
       default:
-        return e.message ?? 'Unable to sign in. Please try again.';
+        return e.message ?? strings.text('loginFailed');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -122,8 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-
-                  // Logo
                   Container(
                     width: 100,
                     height: 100,
@@ -137,40 +146,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.primaryColor,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Welcome Text
-                  const Text(
-                    'Welcome to MyUbat',
-                    style: TextStyle(
+                  Text(
+                    strings.text('welcomeToMyUbat'),
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-
                   const SizedBox(height: 10),
-
-                  const Text(
-                    'Sign in to continue',
-                    style: TextStyle(
+                  Text(
+                    strings.text('signInToContinue'),
+                    style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Email Field
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your email',
+                      labelText: strings.text('email'),
+                      hintText: strings.text('enterYourEmail'),
                       prefixIcon: const Icon(Icons.email_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -189,24 +190,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return strings.text('enterEmail');
                       }
                       if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                        return strings.text('enterValidEmail');
                       }
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Password Field
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
+                      labelText: strings.text('password'),
+                      hintText: strings.text('enterYourPassword'),
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -237,18 +235,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return strings.text('enterPasswordField');
                       }
                       if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
+                        return strings.text('passwordMin6');
                       }
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Remember Me & Forgot Password
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -263,30 +258,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             activeColor: AppColors.primaryColor,
                           ),
-                          const Text('Remember me'),
+                          Text(strings.text('rememberMe')),
                         ],
                       ),
                       TextButton(
                         onPressed: () {
-                          // Forgot password action
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Password reset feature coming soon!'),
+                            SnackBar(
+                              content: Text(strings.text('forgotPasswordSoon')),
                             ),
                           );
                         },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: AppColors.primaryColor),
+                        child: Text(
+                          strings.text('forgotPassword'),
+                          style: const TextStyle(color: AppColors.primaryColor),
                         ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Login Button
                   SizedBox(
                     height: 56,
                     child: ElevatedButton(
@@ -309,36 +299,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Login',
-                              style: TextStyle(
+                          : Text(
+                              strings.text('login'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Sign Up Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Don\'t have an account? ',
-                        style: TextStyle(color: AppColors.textSecondary),
+                      Text(
+                        strings.text('dontHaveAccount'),
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (_) => const RegisterScreen()),
+                              builder: (_) => const RegisterScreen(),
+                            ),
                           );
                         },
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(
+                        child: Text(
+                          strings.text('signUp'),
+                          style: const TextStyle(
                             color: AppColors.primaryColor,
                             fontWeight: FontWeight.bold,
                           ),

@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../data/repositories/user_repository.dart';
+
 import '../constants/app_colors.dart';
+import '../data/repositories/user_repository.dart';
+import '../l10n/app_strings.dart';
 import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -51,25 +53,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await UserRepository().createUserProfile(user.uid, email, displayName);
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_friendlyAuthMessage(e)),
+          content: Text(_friendlyAuthMessage(context.strings, e)),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration failed. Please try again.'),
+        SnackBar(
+          content: Text(context.strings.text('registrationFailed')),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -83,26 +94,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  String _friendlyAuthMessage(FirebaseAuthException e) {
+  String _friendlyAuthMessage(AppStrings strings, FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
         return 'This email is already registered.';
       case 'invalid-email':
-        return 'Please enter a valid email address.';
+        return strings.text('enterValidEmail');
       case 'weak-password':
-        return 'Password is too weak. Use at least 6 characters.';
+        return strings.text('passwordMin6');
       case 'network-request-failed':
         return 'Network error. Check your connection and try again.';
       default:
-        return e.message ?? 'Unable to register. Please try again.';
+        return e.message ?? strings.text('registrationFailed');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text(strings.text('createAccount')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -118,8 +131,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your email',
+                      labelText: strings.text('email'),
+                      hintText: strings.text('enterYourEmail'),
                       prefixIcon: const Icon(Icons.email_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -127,10 +140,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return strings.text('enterEmail');
                       }
                       if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                        return strings.text('enterValidEmail');
                       }
                       return null;
                     },
@@ -140,8 +153,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
+                      labelText: strings.text('password'),
+                      hintText: strings.text('enterYourPassword'),
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -161,10 +174,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return strings.text('enterPasswordField');
                       }
                       if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
+                        return strings.text('passwordMin6');
                       }
                       return null;
                     },
@@ -174,8 +187,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      hintText: 'Re-enter your password',
+                      labelText: strings.text('confirmPasswordLabel'),
+                      hintText: strings.text('reenterPassword'),
                       prefixIcon: const Icon(Icons.lock_reset),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -195,10 +208,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
+                        return strings.text('confirmPasswordRequired');
                       }
                       if (value != _passwordController.text) {
-                        return 'Passwords do not match';
+                        return strings.text('passwordsDoNotMatch');
                       }
                       return null;
                     },
@@ -225,9 +238,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Register',
-                              style: TextStyle(
+                          : Text(
+                              strings.text('register'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),

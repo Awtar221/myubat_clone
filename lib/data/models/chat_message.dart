@@ -8,12 +8,14 @@ class ChatMessage {
     required this.role,
     required this.content,
     required this.createdAt,
+    this.imageBase64,
   });
 
   final String id;
   final String role;
   final String content;
   final Timestamp createdAt;
+  final String? imageBase64; // Storing base64 for local persistence/display
 
   factory ChatMessage.fromMap(Map<String, dynamic> map, {String id = ''}) {
     return ChatMessage(
@@ -21,6 +23,7 @@ class ChatMessage {
       role: asString(map[fields.role], fallback: 'user'),
       content: asString(map[fields.content]),
       createdAt: asTimestamp(map[fields.createdAt]) ?? Timestamp.now(),
+      imageBase64: asString(map['imageBase64']),
     );
   }
 
@@ -29,6 +32,7 @@ class ChatMessage {
       fields.role: role,
       fields.content: content,
       fields.createdAt: createdAt,
+      if (imageBase64 != null) 'imageBase64': imageBase64,
     };
   }
 }
